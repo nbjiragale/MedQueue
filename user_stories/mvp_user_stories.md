@@ -84,5 +84,87 @@
 - App launches quickly enough for day-to-day counter use.
 - UI contains only MVP screens and actions from the PRD scope.
 
+## Story 11: Store customer requests locally with Room
+**As a** medical shop worker, **I want** request data saved locally in the app, **so that** requests remain available offline and across app restarts.
+
+### Acceptance Criteria
+- Request storage uses Room database.
+- A request entity exists with fields: `id` (auto-generated), `customerName`, `phoneNumber`, `medicineName`, `status` (`PENDING`/`DELIVERED`).
+- A DAO exists with basic functions: insert request, get all requests, update request status, delete request.
+- A Room database class exists and provides DAO access.
+- Implementation is simple and directly usable from Compose UI or ViewModel without adding unnecessary architecture layers.
+
+## Story 12: Store app settings locally with SharedPreferences
+**As a** shop owner, **I want** app settings saved locally, **so that** message and contact details are available whenever needed.
+
+### Acceptance Criteria
+- Settings storage uses SharedPreferences.
+- Stored values include: `shopName`, `yogeshName`, `yogeshPhone`, `ownerPhone`.
+- A simple helper class supports save, read, and update settings.
+- Settings can be easily called from Compose UI or ViewModel.
+- No backend, cloud sync, repository layer, or complex architecture is introduced for settings.
+
 ## Out of Scope Guardrail
 The MVP does **not** include login, backend/cloud sync, external APIs, autocomplete, filters, analytics, or multi-user support.
+
+## Story Split (Implementation Tasks)
+
+### Story 11 Split: Room storage for customer requests
+
+#### Task 11.1: Add Room dependencies
+- Add Room runtime, KTX, and compiler dependencies in Gradle files.
+- Keep dependency setup minimal and compatible with current project.
+
+**Done when:** project sync/build succeeds with Room enabled.
+
+#### Task 11.2: Create request model for Room
+- Create `RequestStatus` with values `PENDING` and `DELIVERED`.
+- Create Room entity with fields: `id` (auto-generated), `customerName`, `phoneNumber`, `medicineName`, `status`.
+
+**Done when:** entity compiles and maps exactly to Story 11 fields.
+
+#### Task 11.3: Create DAO with basic operations
+- Add DAO methods for: insert request, get all requests, update request status, delete request.
+- Keep method signatures simple for direct UI/ViewModel usage.
+
+**Done when:** DAO provides all 4 required operations.
+
+#### Task 11.4: Create Room database class
+- Add Room database class that includes request entity and exposes DAO.
+- Provide a simple way to access database instance from app code.
+
+**Done when:** app code can get DAO instance without repository layer.
+
+#### Task 11.5: Wire basic usage
+- Use DAO functions in app flow for save/list/delivered/delete behavior.
+- Keep integration direct and minimal (Compose UI or ViewModel).
+
+**Done when:** request flow works using Room-backed data.
+
+### Story 12 Split: SharedPreferences storage for app settings
+
+#### Task 12.1: Create settings helper
+- Create a simple `SharedPreferences` helper class.
+- Add keys for: `shopName`, `yogeshName`, `yogeshPhone`, `ownerPhone`.
+
+**Done when:** helper compiles and contains all 4 keys.
+
+#### Task 12.2: Implement save/read/update settings
+- Add methods to save settings.
+- Add method to read settings (single object or data holder).
+- Add method to update settings using same minimal API.
+
+**Done when:** all 3 operations (save, read, update) work for the 4 fields.
+
+#### Task 12.3: Wire settings usage
+- Integrate helper where message/contact configuration is needed.
+- Keep usage easy from Compose UI or ViewModel.
+
+**Done when:** app can read persisted settings and reuse them in flow.
+
+### Constraints for Story 11 and 12
+- No repository layer unless absolutely needed.
+- No backend or cloud sync.
+- No complex architecture.
+- Keep code minimal, readable, and local-first.
+
