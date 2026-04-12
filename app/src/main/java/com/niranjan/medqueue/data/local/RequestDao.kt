@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -14,6 +15,12 @@ interface RequestDao {
 
     @Query("SELECT * FROM requests ORDER BY id DESC")
     fun getAll(): Flow<List<RequestEntity>>
+
+    @Update
+    suspend fun update(request: RequestEntity)
+
+    @Query("UPDATE requests SET customerName = :customerName, phoneNumber = :phoneNumber, medicineName = :medicineName WHERE id = :id")
+    suspend fun updateFields(id: Int, customerName: String, phoneNumber: String, medicineName: String)
 
     @Query("UPDATE requests SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: Int, status: RequestStatus)

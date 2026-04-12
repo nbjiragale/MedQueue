@@ -3,8 +3,8 @@ package com.niranjan.medqueue.contact
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.core.net.toUri
+import com.niranjan.medqueue.data.settings.AppSettings
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -19,14 +19,65 @@ sealed class ContactActionResult {
     object NoHandler            : ContactActionResult()
 }
 
-// ── Message builder (single source of truth) ─────────────────────────────────
+// ── Message builders ──────────────────────────────────────────────────────────
 
 /**
- * Builds the standard availability message.
- * All 3 contact actions reuse this — no duplication.
+ * Builds the bilingual (English + Kannada) availability message
+ * with WhatsApp markdown formatting (*bold*, _italic_).
  */
-fun buildMessage(customerName: String, medicineName: String): String =
-    "Hello $customerName, your $medicineName is now available. Please visit."
+fun buildWhatsAppMessage(settings: AppSettings): String {
+    val contact2Line = if (settings.contact2Phone.isNotBlank())
+        "📞 ${settings.contact2Name}: ${settings.contact2Phone}\n" else ""
+
+    return "*✅ Your Medicines Are Ready!*\n\n" +
+        "Dear Customer, the medicines you requested are now in stock and ready for pickup.\n\n" +
+        "⏰ _Please collect at your earliest convenience._\n\n" +
+        "Thank you for trusting us with your health. 🙏\n" +
+        "*_\"Health is wealth\"_*\n" +
+        "——————————————\n" +
+        "*✅ ನಿಮ್ಮ ಔಷಧಿಗಳು ಸಿದ್ಧವಾಗಿವೆ!*\n\n" +
+        "ಪ್ರಿಯ ಗ್ರಾಹಕರೇ, ನೀವು ಕೇಳಿದ ಔಷಧಿಗಳು ಈಗ ಲಭ್ಯವಿದ್ದು, ತೆಗೆದುಕೊಳ್ಳಲು ಸಿದ್ಧವಾಗಿವೆ.\n\n" +
+        "*_ಆರೋಗ್ಯವೇ ಭಾಗ್ಯ_*\n" +
+        "——————————————\n" +
+        "🏥 *${settings.shopName}*\n" +
+        "📍 _${settings.shopAddress}_\n" +
+        "📞 ${settings.contact1Name}: ${settings.contact1Phone}\n" +
+        contact2Line
+}
+
+/**
+ * Builds the same bilingual message but as plain text (no markdown).
+ * Used for SMS where *bold* / _italic_ markers look ugly.
+ */
+fun buildSmsMessage(settings: AppSettings): String {
+    val contact2Line = if (settings.contact2Phone.isNotBlank())
+        "📞 ${settings.contact2Name}: ${settings.contact2Phone}\n" else ""
+
+    return "✅ Your Medicines Are Ready!\n\n" +
+        "Dear Customer, the medicines you requested are now in stock and ready for pickup.\n\n" +
+        "⏰ Please collect at your earliest convenience.\n\n" +
+        "Thank you for trusting us with your health. 🙏\n" +
+        "\"Health is wealth\"\n" +
+        "——————————————\n" +
+        "✅ ನಿಮ್ಮ ಔಷಧಿಗಳು ಸಿದ್ಧವಾಗಿವೆ!\n\n" +
+        "ಪ್ರಿಯ ಗ್ರಾಹಕರೇ, ನೀವು ಕೇಳಿದ ಔಷಧಿಗಳು ಈಗ ಲಭ್ಯವಿದ್ದು, ತೆಗೆದುಕೊಳ್ಳಲು ಸಿದ್ಧವಾಗಿವೆ.\n\n" +
+        "ಆರೋಗ್ಯವೇ ಭಾಗ್ಯ\n" +
+        "——————————————\n" +
+        "🏥 ${settings.shopName}\n" +
+        "📍 ${settings.shopAddress}\n" +
+        "📞 ${settings.contact1Name}: ${settings.contact1Phone}\n" +
+        contact2Line
+}
+
+/**
+ * Picks the right message variant based on the contact action.
+ */
+fun buildMessage(settings: AppSettings, action: ContactAction = ContactAction.WHATSAPP): String =
+    when (action) {
+        ContactAction.WHATSAPP -> buildWhatsAppMessage(settings)
+        ContactAction.SMS      -> buildSmsMessage(settings)
+        ContactAction.CALL     -> buildWhatsAppMessage(settings) // not used for calls, fallback
+    }
 
 // ── Action dispatcher ─────────────────────────────────────────────────────────
 
@@ -45,13 +96,40 @@ fun launchContactAction(
     }
 }
 
+// ── Phone normalisation ───────────────────────────────────────────────────────
+
+/**
+ * Strips non-digit characters and ensures the phone number includes
+ * the Indian country code (91) exactly once.
+ *
+ * Examples:
+ *   "9876543210"      → "919876543210"
+ *   "+91 98765 43210" → "919876543210"
+ *   "09876543210"     → "919876543210"
+ *   "919876543210"    → "919876543210"
+ */
+private fun normalizeIndianPhone(raw: String): String {
+    val digits = raw.replace(Regex("[^\\d]"), "")
+    return when {
+        digits.length >= 12 && digits.startsWith("91") -> digits                // already has 91
+        digits.length == 11 && digits.startsWith("0")  -> "91${digits.drop(1)}" // leading 0
+        digits.length == 10                             -> "91$digits"           // local number
+        else                                            -> digits                // fallback as-is
+    }
+}
+
 // ── Intent helpers ────────────────────────────────────────────────────────────
 
 private fun launchWhatsApp(context: Context, phone: String, message: String): ContactActionResult {
+    val normalizedPhone = normalizeIndianPhone(phone)
     return try {
         val encoded = URLEncoder.encode(message, StandardCharsets.UTF_8.toString())
-        val intent = Intent(Intent.ACTION_VIEW, "https://wa.me/91$phone?text=$encoded".toUri())
-            .setPackage("com.whatsapp")
+        // api.whatsapp.com/send resolves directly inside WhatsApp —
+        // wa.me adds an extra HTTP redirect that slows things down.
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            "https://api.whatsapp.com/send?phone=$normalizedPhone&text=$encoded".toUri()
+        ).setPackage("com.whatsapp")
         context.startActivity(intent)
         ContactActionResult.Success
     } catch (e: ActivityNotFoundException) {

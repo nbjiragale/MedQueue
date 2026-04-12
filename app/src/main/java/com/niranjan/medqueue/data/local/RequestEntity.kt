@@ -30,6 +30,7 @@ data class RequestEntity(
     val customerName: String,
     val phoneNumber: String,
     val medicineName: String,
-    val status: RequestStatus = RequestStatus.PENDING
+    val status: RequestStatus = RequestStatus.PENDING,
+    val createdAt: Long = System.currentTimeMillis()
 )
 

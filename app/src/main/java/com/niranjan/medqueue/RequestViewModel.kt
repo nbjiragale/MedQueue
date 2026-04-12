@@ -36,15 +36,23 @@ class RequestViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun markDelivered(id: Int) {
+        viewModelScope.launch { dao.updateStatus(id, RequestStatus.DELIVERED) }
+    }
+
+    /** Edit customer name, phone, medicine — status is preserved. */
+    fun updateRequest(id: Int, customerName: String, phoneNumber: String, medicineName: String) {
         viewModelScope.launch {
-            dao.updateStatus(id, RequestStatus.DELIVERED)
+            dao.updateFields(
+                id           = id,
+                customerName = customerName.trim(),
+                phoneNumber  = phoneNumber.trim(),
+                medicineName = medicineName.trim()
+            )
         }
     }
 
     fun deleteRequest(id: Int) {
-        viewModelScope.launch {
-            dao.delete(id)
-        }
+        viewModelScope.launch { dao.delete(id) }
     }
 }
 
