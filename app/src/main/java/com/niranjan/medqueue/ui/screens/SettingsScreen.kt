@@ -2,6 +2,7 @@ package com.niranjan.medqueue.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.niranjan.medqueue.R
+import com.niranjan.medqueue.autosend.AutoSendPrefs
 import com.niranjan.medqueue.contact.buildMessage
 import com.niranjan.medqueue.data.settings.AppSettings
 import com.niranjan.medqueue.data.settings.SettingsPrefs
@@ -363,6 +365,9 @@ fun SettingsScreen(
                 }
             }
 
+            // ── Auto-send card ──────────────────────────────────────────
+            AutoSendCard()
+
             // ── Save button (gradient) ──────────────────────────────────
             Spacer(Modifier.height(4.dp))
             Button(
@@ -399,3 +404,138 @@ fun SettingsScreen(
     }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ── AUTO-SEND TOGGLE CARD
+// ══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun AutoSendCard() {
+    val context = LocalContext.current
+    var enabled by remember { mutableStateOf(AutoSendPrefs.isAutoSendEnabled(context)) }
+    var serviceActive by remember { mutableStateOf(AutoSendPrefs.isServiceEnabled(context)) }
+
+    // Re-check when returning from Accessibility Settings
+    DisposableEffect(Unit) {
+        onDispose { }
+    }
+    // Recheck service status on every recomposition (covers returning from settings)
+    LaunchedEffect(enabled) {
+        serviceActive = AutoSendPrefs.isServiceEnabled(context)
+    }
+
+    ElevatedCard(
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors    = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF25D366).copy(alpha = 0.15f))
+                ) {
+                    Text("⚡", fontSize = 16.sp)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.auto_send_whatsapp),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        stringResource(R.string.auto_send_subtitle),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = { on ->
+                        enabled = on
+                        AutoSendPrefs.setAutoSendEnabled(context, on)
+                        if (on && !AutoSendPrefs.isServiceEnabled(context)) {
+                            AutoSendPrefs.openAccessibilitySettings(context)
+                        }
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = Color(0xFF25D366)
+                    )
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+            Spacer(Modifier.height(12.dp))
+
+            // Info text
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape    = RoundedCornerShape(12.dp),
+                color    = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Text(
+                    text     = stringResource(R.string.auto_send_info),
+                    modifier = Modifier.padding(12.dp),
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Service status indicator
+            if (enabled) {
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (!serviceActive) Modifier.clickable {
+                                AutoSendPrefs.openAccessibilitySettings(context)
+                                // Re-check on next recomposition
+                            } else Modifier
+                        ),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (serviceActive) Color(0xFF25D366).copy(alpha = 0.1f)
+                            else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (serviceActive) Icons.Filled.Check else Icons.Filled.Warning,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = if (serviceActive) Color(0xFF25D366)
+                                   else MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            text  = stringResource(
+                                if (serviceActive) R.string.auto_send_service_active
+                                else R.string.auto_send_service_inactive
+                            ),
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = if (serviceActive) Color(0xFF25D366)
+                                    else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

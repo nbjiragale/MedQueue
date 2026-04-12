@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
+import com.niranjan.medqueue.autosend.AutoSendPrefs
 import com.niranjan.medqueue.data.settings.AppSettings
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -124,6 +125,12 @@ private fun launchWhatsApp(context: Context, phone: String, message: String): Co
     val normalizedPhone = normalizeIndianPhone(phone)
     return try {
         val encoded = URLEncoder.encode(message, StandardCharsets.UTF_8.toString())
+
+        // If auto-send is on, tell the accessibility service to tap Send
+        if (AutoSendPrefs.isAutoSendEnabled(context) && AutoSendPrefs.isServiceEnabled(context)) {
+            AutoSendPrefs.setAutoSendPending(context, true)
+        }
+
         // api.whatsapp.com/send resolves directly inside WhatsApp —
         // wa.me adds an extra HTTP redirect that slows things down.
         val intent = Intent(
@@ -133,6 +140,7 @@ private fun launchWhatsApp(context: Context, phone: String, message: String): Co
         context.startActivity(intent)
         ContactActionResult.Success
     } catch (e: ActivityNotFoundException) {
+        AutoSendPrefs.clearAutoSendPending(context)
         ContactActionResult.WhatsAppNotInstalled
     }
 }

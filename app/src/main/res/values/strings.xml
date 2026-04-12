@@ -65,4 +65,14 @@
     <string name="unknown">Unknown</string>
     <string name="unknown_customer">Unknown Customer</string>
     <string name="notification">Notifications</string>
+
+    <!-- Auto-send -->
+    <string name="auto_send_service_description">Allows MedQueue to automatically tap the Send button in WhatsApp so messages are sent without manual intervention. Only activates when you trigger a message from MedQueue.</string>
+    <string name="auto_send_whatsapp">Auto-Send WhatsApp</string>
+    <string name="auto_send_subtitle">Automatically tap Send in WhatsApp</string>
+    <string name="auto_send_info">When enabled, tapping WhatsApp in the contact sheet will open WhatsApp, auto-tap Send, and return you here. No extra tap needed.</string>
+    <string name="auto_send_enable_service">Enable Accessibility Service</string>
+    <string name="auto_send_service_active">✓ Service is active</string>
+    <string name="auto_send_service_inactive">Service not enabled — tap to open settings</string>
+    <string name="auto_send_sent_toast">Message auto-sent ✓</string>
 </resources>
