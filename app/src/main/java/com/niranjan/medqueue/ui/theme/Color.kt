@@ -83,6 +83,12 @@ val StatusDeliveredContent   = Color(0xFFFFFFFF)   // white text on green
 // Left accent stripe on cards
 val StripePending            = Color(0xFFFFA726)   // orange accent
 val StripeDelivered          = Color(0xFF43A047)   // green accent
+val StripeEmergency          = Color(0xFFD32F2F)   // red accent
+
+// Emergency badge & card colours
+val StatusEmergencyBg        = Color(0xFFD32F2F)   // red
+val StatusEmergencyContent   = Color(0xFFFFFFFF)   // white text on red
+val CardEmergencyBg          = Color(0xFFFFEBEE)   // light red wash
 
 // Top-bar tint (medical green)
 val TopBarContainer          = Color(0xFF006B5E)   // same as primary

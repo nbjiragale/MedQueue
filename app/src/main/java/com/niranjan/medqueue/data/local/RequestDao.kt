@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 interface RequestDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(request: RequestEntity)
+    suspend fun insert(request: RequestEntity): Long
 
     @Query("SELECT * FROM requests ORDER BY id DESC")
     fun getAll(): Flow<List<RequestEntity>>

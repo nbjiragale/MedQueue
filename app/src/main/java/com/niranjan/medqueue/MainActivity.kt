@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,8 +31,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -84,6 +88,7 @@ sealed class Screen {
 fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
     var screen: Screen by remember { mutableStateOf(Screen.RequestList) }
     val requests by vm.requests.collectAsState()
+    val emergencyIds by vm.emergencyIds.collectAsState()
 
     val bottomBar: @Composable () -> Unit = {
         MedQueueBottomBar(currentScreen = screen, onNavigate = { screen = it })
@@ -91,34 +96,40 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
 
     when (val s = screen) {
         Screen.Home -> HomeScreen(
-            onSave = { name, phone, medicine ->
-                vm.addRequest(name, phone, medicine)
+            onSave = { name, phone, medicine, isEmergency ->
+                vm.addRequest(name, phone, medicine, isEmergency)
                 screen = Screen.RequestList
             },
             onBack    = { screen = Screen.RequestList },
             bottomBar = bottomBar
         )
         Screen.RequestList -> RequestListScreen(
-            requests   = requests,
-            onAddClick = { screen = Screen.Home },
-            onItemClick = { screen = Screen.RequestDetail(it) },
-            bottomBar  = bottomBar
+            requests     = requests,
+            emergencyIds = emergencyIds,
+            onAddClick   = { screen = Screen.Home },
+            onItemClick  = { screen = Screen.RequestDetail(it) },
+            bottomBar    = bottomBar
         )
         is Screen.RequestDetail -> RequestDetailScreen(
             request       = s.request,
+            isEmergency   = s.request.id in emergencyIds,
             settingsPrefs = settingsPrefs,
             onEdit        = { screen = Screen.EditRequest(s.request) },
             onDelivered   = { vm.markDelivered(s.request.id); screen = Screen.RequestList },
             onDelete      = { vm.deleteRequest(s.request.id); screen = Screen.RequestList },
-            onBack        = { screen = Screen.RequestList }
+            onBack        = { screen = Screen.RequestList },
+            bottomBar     = bottomBar
         )
         is Screen.EditRequest -> EditRequestScreen(
-            request = s.request,
-            onSave  = { name, phone, medicine ->
+            request     = s.request,
+            isEmergency = s.request.id in emergencyIds,
+            onSave      = { name, phone, medicine, emergency ->
                 vm.updateRequest(s.request.id, name, phone, medicine)
+                vm.setEmergency(s.request.id, emergency)
                 screen = Screen.RequestList
             },
-            onBack  = { screen = Screen.RequestDetail(s.request) }
+            onBack      = { screen = Screen.RequestDetail(s.request) },
+            bottomBar   = bottomBar
         )
         Screen.Settings -> SettingsScreen(
             settingsPrefs = settingsPrefs,
@@ -217,15 +228,15 @@ private fun InitialsAvatar(name: String, size: Int = 44) {
 /** Subtle section label used above groups of form fields. */
 @Composable
 private fun SectionLabel(emoji: String, title: String, subtitle: String? = null) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .size(28.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
         ) {
-            Text(emoji, fontSize = 16.sp)
+            Text(emoji, fontSize = 14.sp)
         }
         Column {
             Text(
@@ -276,6 +287,73 @@ fun StatusBadge(status: RequestStatus) {
     }
 }
 
+/** Red pill-shaped "Emergency" badge. */
+@Composable
+fun EmergencyBadge() {
+    Surface(shape = RoundedCornerShape(50), color = StatusEmergencyBg) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(StatusEmergencyContent)
+            )
+            Text(
+                text = "Emergency",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.3.sp
+                ),
+                color = StatusEmergencyContent
+            )
+        }
+    }
+}
+
+/** Tappable emergency toggle chip for forms. */
+@Composable
+fun EmergencyToggleChip(isEmergency: Boolean, onToggle: () -> Unit) {
+    val redTint = Color(0xFFD32F2F)
+    Surface(
+        onClick = onToggle,
+        shape   = RoundedCornerShape(50),
+        color   = if (isEmergency) StatusEmergencyBg else Color.Transparent,
+        border  = if (isEmergency) null
+                  else BorderStroke(1.dp, redTint.copy(alpha = 0.5f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = if (isEmergency) StatusEmergencyContent else redTint
+            )
+            Text(
+                text = if (isEmergency) "Emergency" else "Mark Emergency",
+                fontWeight = if (isEmergency) FontWeight.Bold else FontWeight.Medium,
+                fontSize = 11.sp,
+                color = if (isEmergency) StatusEmergencyContent else redTint
+            )
+            if (isEmergency) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = "Remove emergency",
+                    modifier = Modifier.size(12.dp),
+                    tint = StatusEmergencyContent.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ── REQUEST LIST SCREEN
 // ══════════════════════════════════════════════════════════════════════════════
@@ -284,6 +362,7 @@ fun StatusBadge(status: RequestStatus) {
 @Composable
 fun RequestListScreen(
     requests: List<RequestEntity>,
+    emergencyIds: Set<Int> = emptySet(),
     onAddClick: () -> Unit,
     onItemClick: (RequestEntity) -> Unit,
     bottomBar: @Composable () -> Unit = {}
@@ -444,7 +523,11 @@ fun RequestListScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(filteredRequests, key = { it.id }) { request ->
-                        RequestListItem(request = request, onClick = { onItemClick(request) })
+                        RequestListItem(
+                            request     = request,
+                            isEmergency = request.id in emergencyIds,
+                            onClick     = { onItemClick(request) }
+                        )
                     }
                     item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
@@ -516,12 +599,12 @@ private fun EmptyState(hasRequests: Boolean, modifier: Modifier = Modifier) {
 // ── Request list card ─────────────────────────────────────────────────────────
 
 @Composable
-fun RequestListItem(request: RequestEntity, onClick: () -> Unit) {
+fun RequestListItem(request: RequestEntity, isEmergency: Boolean = false, onClick: () -> Unit) {
     val dateFormat  = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
     val displayName = request.customerName.ifBlank { "Unknown" }
     val isPending   = request.status == RequestStatus.PENDING
-    val cardBg      = if (isPending) CardPendingBg else CardDeliveredBg
-    val stripeColor = if (isPending) StripePending  else StripeDelivered
+    val cardBg      = if (isEmergency) CardEmergencyBg else if (isPending) CardPendingBg else CardDeliveredBg
+    val stripeColor = if (isEmergency) StripeEmergency else if (isPending) StripePending  else StripeDelivered
 
     val medicineLines = remember(request.medicineName) {
         request.medicineName.lines().filter { it.isNotBlank() }
@@ -562,7 +645,7 @@ fun RequestListItem(request: RequestEntity, onClick: () -> Unit) {
                 // Text content
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
 
-                    // Row: Name + status
+                    // Row: Name + badges
                     Row(
                         modifier              = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -576,7 +659,10 @@ fun RequestListItem(request: RequestEntity, onClick: () -> Unit) {
                             modifier = Modifier.weight(1f, fill = false)
                         )
                         Spacer(Modifier.width(8.dp))
-                        StatusBadge(status = request.status)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            if (isEmergency) EmergencyBadge()
+                            StatusBadge(status = request.status)
+                        }
                     }
 
                     // Phone
@@ -652,15 +738,23 @@ private fun MedPill(text: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onSave    : (String, String, String) -> Unit,
+    onSave    : (String, String, String, Boolean) -> Unit,
     onBack    : () -> Unit,
     bottomBar : @Composable () -> Unit = {}
 ) {
     var name          by remember { mutableStateOf("") }
     var phone         by remember { mutableStateOf("") }
     var medicine      by remember { mutableStateOf("") }
+    var isEmergency   by remember { mutableStateOf(false) }
     var phoneError    by remember { mutableStateOf("") }
-    var medicineError by remember { mutableStateOf("") }
+
+    val phoneFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+        phoneFocusRequester.requestFocus()
+        keyboardController?.show()
+    }
 
     Scaffold(
         topBar = {
@@ -684,113 +778,119 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-
-            // ── Customer card ────────────────────────────────────────────
-            FormCard {
-                SectionLabel("👤", "Customer Details", "Who is this request for?")
-                Spacer(Modifier.height(14.dp))
-                OutlinedTextField(
-                    value         = name,
-                    onValueChange = { name = it },
-                    label         = { Text("Customer Name (optional)") },
-                    leadingIcon   = {
-                        Icon(Icons.Filled.Person, null,
-                            tint     = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp))
-                    },
-                    modifier   = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape      = RoundedCornerShape(12.dp)
-                )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value         = phone,
-                    onValueChange = { raw ->
-                        phone = raw.filter { it.isDigit() }
-                        if (phone.isNotEmpty()) phoneError = ""
-                    },
-                    label       = { Text("Phone Number *") },
-                    leadingIcon = {
-                        Icon(Icons.Filled.Phone, null,
-                            tint     = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp))
-                    },
-                    prefix  = {
-                        Text("+91  ",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    },
-                    modifier        = Modifier.fillMaxWidth(),
-                    singleLine      = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    isError         = phoneError.isNotEmpty(),
-                    supportingText  = {
-                        Text(
-                            if (phoneError.isNotEmpty()) phoneError else "10-digit mobile number",
-                            color = if (phoneError.isNotEmpty()) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.outline
-                        )
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            // ── Medicine card ────────────────────────────────────────────
-            FormCard {
-                SectionLabel("💊", "Medicines", "List what the customer needs")
-                Spacer(Modifier.height(14.dp))
-                OutlinedTextField(
-                    value         = medicine,
-                    onValueChange = {
-                        medicine = it
-                        if (medicine.isNotEmpty()) medicineError = ""
-                    },
-                    label         = { Text("Medicines *") },
-                    placeholder   = { Text("e.g.\nParacetamol 500mg\nAmoxicillin 250mg") },
-                    modifier      = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 130.dp),
-                    minLines        = 4,
-                    maxLines        = 8,
-                    singleLine      = false,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                    isError         = medicineError.isNotEmpty(),
-                    supportingText  = {
-                        Text(
-                            if (medicineError.isNotEmpty()) medicineError else "One medicine per line",
-                            color = if (medicineError.isNotEmpty()) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.outline
-                        )
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            // ── Actions ──────────────────────────────────────────────────
-            Spacer(Modifier.height(4.dp))
-            Button(
-                onClick = {
-                    phoneError = ""; medicineError = ""
-                    when {
-                        phone.isBlank()   -> phoneError    = "Phone number is required"
-                        phone.length < 10 -> phoneError    = "Enter a valid 10-digit number"
-                        medicine.isBlank()-> medicineError = "At least one medicine is required"
-                        else              -> onSave(name, phone, medicine)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp)
+            // ── Scrollable form content ─────────────────────────────────
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(Icons.Filled.Check, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Save Request", fontWeight = FontWeight.SemiBold)
+
+                // ── Customer card ────────────────────────────────────────────
+                FormCard {
+                    SectionLabel("👤", "Customer Details")
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value         = name,
+                        onValueChange = { name = it },
+                        label         = { Text("Customer Name (optional)") },
+                        leadingIcon   = {
+                            Icon(Icons.Filled.Person, null,
+                                tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp))
+                        },
+                        modifier   = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape      = RoundedCornerShape(10.dp)
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value         = phone,
+                        onValueChange = { raw ->
+                            phone = raw.filter { it.isDigit() }
+                            if (phone.isNotEmpty()) phoneError = ""
+                        },
+                        label       = { Text("Phone Number *") },
+                        leadingIcon = {
+                            Icon(Icons.Filled.Phone, null,
+                                tint     = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp))
+                        },
+                        prefix  = {
+                            Text("+91  ",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        },
+                        modifier        = Modifier.fillMaxWidth().focusRequester(phoneFocusRequester),
+                        singleLine      = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        isError         = phoneError.isNotEmpty(),
+                        supportingText  = if (phoneError.isNotEmpty()) {
+                            { Text(phoneError, color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                }
+
+                // ── Medicine card ────────────────────────────────────────────
+                FormCard {
+                    SectionLabel("💊", "Medicines (optional)")
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value         = medicine,
+                        onValueChange = { medicine = it },
+                        label         = { Text("Medicines") },
+                        placeholder   = { Text("e.g. Paracetamol 500mg, Amoxicillin 250mg") },
+                        modifier      = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 72.dp),
+                        minLines        = 2,
+                        maxLines        = 4,
+                        singleLine      = false,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                }
             }
-            TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-                Text("Cancel")
+
+            // ── Fixed bottom area (emergency + actions, always visible) ──
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 14.dp)
+                    .padding(top = 6.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                // ── Emergency toggle ──────────────────────────────────────
+                EmergencyToggleChip(
+                    isEmergency = isEmergency,
+                    onToggle    = { isEmergency = !isEmergency }
+                )
+                Button(
+                    onClick = {
+                        phoneError = ""
+                        when {
+                            phone.isBlank()   -> phoneError = "Phone number is required"
+                            phone.length < 10 -> phoneError = "Enter a valid 10-digit number"
+                            else              -> onSave(name, phone, medicine, isEmergency)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(46.dp),
+                    shape    = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Filled.Check, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Save Request", fontWeight = FontWeight.SemiBold)
+                }
+                TextButton(
+                    onClick  = onBack,
+                    modifier = Modifier.fillMaxWidth().height(36.dp)
+                ) {
+                    Text("Cancel")
+                }
             }
         }
     }
@@ -807,7 +907,7 @@ private fun FormCard(content: @Composable ColumnScope.() -> Unit) {
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        Column(modifier = Modifier.padding(20.dp), content = content)
+        Column(modifier = Modifier.padding(14.dp), content = content)
     }
 }
 
@@ -819,11 +919,13 @@ private fun FormCard(content: @Composable ColumnScope.() -> Unit) {
 @Composable
 fun RequestDetailScreen(
     request       : RequestEntity,
+    isEmergency   : Boolean = false,
     settingsPrefs : SettingsPrefs,
     onEdit        : () -> Unit,
     onDelivered   : () -> Unit,
     onDelete      : () -> Unit,
-    onBack        : () -> Unit
+    onBack        : () -> Unit,
+    bottomBar     : @Composable () -> Unit = {}
 ) {
     val context         = LocalContext.current
     var showContactSheet by remember { mutableStateOf(false) }
@@ -861,7 +963,8 @@ fun RequestDetailScreen(
                     actionIconContentColor  = TopBarContent
                 )
             )
-        }
+        },
+        bottomBar = bottomBar
     ) { padding ->
         Column(
             modifier = Modifier
@@ -873,7 +976,7 @@ fun RequestDetailScreen(
         ) {
 
             // ── Hero card ────────────────────────────────────────────────
-            val heroBg = if (isPending) CardPendingBg else CardDeliveredBg
+            val heroBg = if (isEmergency) CardEmergencyBg else if (isPending) CardPendingBg else CardDeliveredBg
             Card(
                 modifier  = Modifier.fillMaxWidth(),
                 shape     = RoundedCornerShape(20.dp),
@@ -908,7 +1011,13 @@ fun RequestDetailScreen(
                                 )
                             }
                         }
-                        StatusBadge(status = request.status)
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            StatusBadge(status = request.status)
+                            if (isEmergency) EmergencyBadge()
+                        }
                     }
 
                     HorizontalDivider(
@@ -1089,15 +1198,17 @@ private fun ContactActionSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditRequestScreen(
-    request : RequestEntity,
-    onSave  : (String, String, String) -> Unit,
-    onBack  : () -> Unit
+    request     : RequestEntity,
+    isEmergency : Boolean = false,
+    onSave      : (String, String, String, Boolean) -> Unit,
+    onBack      : () -> Unit,
+    bottomBar   : @Composable () -> Unit = {}
 ) {
     var name          by remember { mutableStateOf(request.customerName) }
     var phone         by remember { mutableStateOf(request.phoneNumber) }
     var medicine      by remember { mutableStateOf(request.medicineName) }
+    var emergency     by remember { mutableStateOf(isEmergency) }
     var phoneError    by remember { mutableStateOf("") }
-    var medicineError by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -1123,110 +1234,128 @@ fun EditRequestScreen(
                     navigationIconContentColor = TopBarContent
                 )
             )
-        }
+        },
+        bottomBar = bottomBar
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-
-            // ── Info banner ───────────────────────────────────────────────
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape    = RoundedCornerShape(14.dp),
-                color    = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
+            // ── Scrollable form content ─────────────────────────────────
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Row(
-                    modifier              = Modifier.padding(14.dp),
-                    verticalAlignment     = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+
+                // ── Info banner ───────────────────────────────────────────────
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape    = RoundedCornerShape(14.dp),
+                    color    = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
                 ) {
-                    Text("✏️", fontSize = 18.sp)
-                    Text(
-                        "Update customer or medicine details below.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                    Row(
+                        modifier              = Modifier.padding(14.dp),
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("✏️", fontSize = 18.sp)
+                        Text(
+                            "Update customer or medicine details below.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                // ── Customer card ─────────────────────────────────────────────
+                FormCard {
+                    SectionLabel("👤", "Customer Details", "Who is this request for?")
+                    Spacer(Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value = name, onValueChange = { name = it },
+                        label       = { Text("Customer Name (optional)") },
+                        leadingIcon = { Icon(Icons.Filled.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
+                        modifier    = Modifier.fillMaxWidth(), singleLine = true,
+                        shape       = RoundedCornerShape(12.dp)
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value         = phone,
+                        onValueChange = { raw ->
+                            phone = raw.filter { it.isDigit() }
+                            if (phone.isNotEmpty()) phoneError = ""
+                        },
+                        label       = { Text("Phone Number *") },
+                        leadingIcon = { Icon(Icons.Filled.Phone, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
+                        prefix      = { Text("+91  ", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        modifier        = Modifier.fillMaxWidth(), singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        isError         = phoneError.isNotEmpty(),
+                        supportingText  = {
+                            Text(if (phoneError.isNotEmpty()) phoneError else "10-digit mobile number",
+                                color = if (phoneError.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline)
+                        },
+                        shape = RoundedCornerShape(12.dp)
                     )
                 }
-            }
 
-            // ── Customer card ─────────────────────────────────────────────
-            FormCard {
-                SectionLabel("👤", "Customer Details", "Who is this request for?")
-                Spacer(Modifier.height(14.dp))
-                OutlinedTextField(
-                    value = name, onValueChange = { name = it },
-                    label       = { Text("Customer Name (optional)") },
-                    leadingIcon = { Icon(Icons.Filled.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-                    modifier    = Modifier.fillMaxWidth(), singleLine = true,
-                    shape       = RoundedCornerShape(12.dp)
-                )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value         = phone,
-                    onValueChange = { raw ->
-                        phone = raw.filter { it.isDigit() }
-                        if (phone.isNotEmpty()) phoneError = ""
-                    },
-                    label       = { Text("Phone Number *") },
-                    leadingIcon = { Icon(Icons.Filled.Phone, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-                    prefix      = { Text("+91  ", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    modifier        = Modifier.fillMaxWidth(), singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    isError         = phoneError.isNotEmpty(),
-                    supportingText  = {
-                        Text(if (phoneError.isNotEmpty()) phoneError else "10-digit mobile number",
-                            color = if (phoneError.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline)
-                    },
-                    shape = RoundedCornerShape(12.dp)
+                // ── Medicine card ─────────────────────────────────────────────
+                FormCard {
+                    SectionLabel("💊", "Medicines (optional)", "List what the customer needs")
+                    Spacer(Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value         = medicine,
+                        onValueChange = { medicine = it },
+                        label         = { Text("Medicines") },
+                        placeholder   = { Text("e.g.\nParacetamol 500mg\nAmoxicillin 250mg") },
+                        modifier      = Modifier.fillMaxWidth().heightIn(min = 100.dp),
+                        minLines      = 3, maxLines = 6, singleLine = false,
+                        supportingText = {
+                            Text("One medicine per line",
+                                color = MaterialTheme.colorScheme.outline)
+                        },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                // ── Emergency toggle ────────────────────────────────────────
+                EmergencyToggleChip(
+                    isEmergency = emergency,
+                    onToggle    = { emergency = !emergency }
                 )
             }
 
-            // ── Medicine card ─────────────────────────────────────────────
-            FormCard {
-                SectionLabel("💊", "Medicines", "List what the customer needs")
-                Spacer(Modifier.height(14.dp))
-                OutlinedTextField(
-                    value         = medicine,
-                    onValueChange = { medicine = it; if (medicine.isNotEmpty()) medicineError = "" },
-                    label         = { Text("Medicines *") },
-                    placeholder   = { Text("e.g.\nParacetamol 500mg\nAmoxicillin 250mg") },
-                    modifier      = Modifier.fillMaxWidth().heightIn(min = 130.dp),
-                    minLines      = 4, maxLines = 8, singleLine = false,
-                    isError       = medicineError.isNotEmpty(),
-                    supportingText = {
-                        Text(if (medicineError.isNotEmpty()) medicineError else "One medicine per line",
-                            color = if (medicineError.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline)
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            // ── Actions ───────────────────────────────────────────────────
-            Spacer(Modifier.height(4.dp))
-            Button(
-                onClick = {
-                    phoneError = ""; medicineError = ""
-                    when {
-                        phone.isBlank()    -> phoneError    = "Phone number is required"
-                        phone.length < 10  -> phoneError    = "Enter a valid 10-digit number"
-                        medicine.isBlank() -> medicineError = "At least one medicine is required"
-                        else               -> onSave(name, phone, medicine)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(14.dp)
+            // ── Fixed bottom actions (always visible, no scroll needed) ──
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Icon(Icons.Filled.Check, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Save Changes", fontWeight = FontWeight.SemiBold)
-            }
-            TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-                Text("Cancel")
+                Button(
+                    onClick = {
+                        phoneError = ""
+                        when {
+                            phone.isBlank()    -> phoneError = "Phone number is required"
+                            phone.length < 10  -> phoneError = "Enter a valid 10-digit number"
+                            else               -> onSave(name, phone, medicine, emergency)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape    = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Filled.Check, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Save Changes", fontWeight = FontWeight.SemiBold)
+                }
+                TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                    Text("Cancel")
+                }
             }
         }
     }
@@ -1327,7 +1456,7 @@ fun SettingsScreen(
 
             // ── Contact 1 card ────────────────────────────────────────────
             FormCard {
-                SectionLabel("📞", "Primary Contact", "Main point of contact")
+                SectionLabel("📞", "Primary Contact", "First point of contact")
                 Spacer(Modifier.height(14.dp))
                 OutlinedTextField(
                     value = contact1Name, onValueChange = { contact1Name = it },
@@ -1351,7 +1480,7 @@ fun SettingsScreen(
 
             // ── Contact 2 card ────────────────────────────────────────────
             FormCard {
-                SectionLabel("📞", "Secondary Contact", "Backup point of contact")
+                SectionLabel("📞", "Secondary Contact", "Optional additional contact")
                 Spacer(Modifier.height(14.dp))
                 OutlinedTextField(
                     value = contact2Name, onValueChange = { contact2Name = it },
