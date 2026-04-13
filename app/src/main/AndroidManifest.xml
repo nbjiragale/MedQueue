@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Send SMS directly without opening the SMS app -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+
     <!-- Required for Android 11+ package visibility to detect WhatsApp -->
     <queries>
         <package android:name="com.whatsapp" />

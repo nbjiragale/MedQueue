@@ -75,4 +75,13 @@
     <string name="auto_send_service_active">✓ Service is active</string>
     <string name="auto_send_service_inactive">Service not enabled — tap to open settings</string>
     <string name="auto_send_sent_toast">Message auto-sent ✓</string>
+
+    <!-- Auto-send SMS -->
+    <string name="auto_send_sms">Auto-Send SMS</string>
+    <string name="auto_send_sms_subtitle">Send SMS instantly in background</string>
+    <string name="auto_send_sms_info">When enabled, tapping SMS in the contact sheet sends the message directly — no SMS app opens. Requires SEND_SMS permission.</string>
+    <string name="auto_send_sms_sent_toast">SMS sent ✓</string>
+    <string name="auto_send_sms_permission_needed">SMS permission required — please grant it</string>
+    <string name="auto_send_sms_permission_granted">✓ SMS permission granted</string>
+    <string name="auto_send_sms_permission_denied">Permission denied — tap to grant</string>
 </resources>

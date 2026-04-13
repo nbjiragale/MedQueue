@@ -1,6 +1,10 @@
 package com.niranjan.medqueue.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -367,6 +371,7 @@ fun SettingsScreen(
 
             // ── Auto-send card ──────────────────────────────────────────
             AutoSendCard()
+            AutoSendSmsCard()
 
             // ── Save button (gradient) ──────────────────────────────────
             Spacer(Modifier.height(4.dp))
@@ -531,6 +536,160 @@ private fun AutoSendCard() {
                                 fontWeight = FontWeight.Medium
                             ),
                             color = if (serviceActive) Color(0xFF25D366)
+                                    else MaterialTheme.colorScheme.error
+                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── AUTO-SEND SMS TOGGLE CARD
+// ══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun AutoSendSmsCard() {
+    val context = LocalContext.current
+    var enabled by remember { mutableStateOf(AutoSendPrefs.isSmsAutoSendEnabled(context)) }
+    var hasPermission by remember {
+        mutableStateOf(
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, Manifest.permission.SEND_SMS
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasPermission = granted
+        if (granted) {
+            enabled = true
+            AutoSendPrefs.setSmsAutoSendEnabled(context, true)
+            Toast.makeText(context, "SMS permission granted ✓", Toast.LENGTH_SHORT).show()
+        } else {
+            enabled = false
+            AutoSendPrefs.setSmsAutoSendEnabled(context, false)
+            Toast.makeText(context, "SMS permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    ElevatedCard(
+        modifier  = Modifier.fillMaxWidth(),
+        shape     = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors    = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                ) {
+                    Text("💬", fontSize = 16.sp)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.auto_send_sms),
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        stringResource(R.string.auto_send_sms_subtitle),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = { on ->
+                        if (on) {
+                            if (hasPermission) {
+                                enabled = true
+                                AutoSendPrefs.setSmsAutoSendEnabled(context, true)
+                            } else {
+                                // Request the permission first
+                                permissionLauncher.launch(Manifest.permission.SEND_SMS)
+                            }
+                        } else {
+                            enabled = false
+                            AutoSendPrefs.setSmsAutoSendEnabled(context, false)
+                        }
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedTrackColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+            Spacer(Modifier.height(12.dp))
+
+            // Info text
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape    = RoundedCornerShape(12.dp),
+                color    = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            ) {
+                Text(
+                    text     = stringResource(R.string.auto_send_sms_info),
+                    modifier = Modifier.padding(12.dp),
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Permission status indicator
+            if (enabled) {
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (!hasPermission) Modifier.clickable {
+                                permissionLauncher.launch(Manifest.permission.SEND_SMS)
+                            } else Modifier
+                        ),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (hasPermission) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (hasPermission) Icons.Filled.Check else Icons.Filled.Warning,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = if (hasPermission) MaterialTheme.colorScheme.primary
+                                   else MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            text  = stringResource(
+                                if (hasPermission) R.string.auto_send_sms_permission_granted
+                                else R.string.auto_send_sms_permission_denied
+                            ),
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = if (hasPermission) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.error
                         )
                     }

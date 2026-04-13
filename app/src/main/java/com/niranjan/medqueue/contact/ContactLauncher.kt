@@ -3,6 +3,8 @@ package com.niranjan.medqueue.contact
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.telephony.SmsManager
+import android.util.Log
 import androidx.core.net.toUri
 import com.niranjan.medqueue.autosend.AutoSendPrefs
 import com.niranjan.medqueue.data.settings.AppSettings
@@ -15,9 +17,11 @@ enum class ContactAction { WHATSAPP, SMS, CALL }
 
 sealed class ContactActionResult {
     object Success              : ContactActionResult()
+    object AutoSent             : ContactActionResult()
     object InvalidPhone         : ContactActionResult()
     object WhatsAppNotInstalled : ContactActionResult()
     object NoHandler            : ContactActionResult()
+    object SmsPermissionNeeded  : ContactActionResult()
 }
 
 // ── Message builders ──────────────────────────────────────────────────────────
@@ -146,12 +150,40 @@ private fun launchWhatsApp(context: Context, phone: String, message: String): Co
 }
 
 private fun launchSms(context: Context, phone: String, message: String): ContactActionResult {
+    // If auto-send SMS is enabled, send directly via SmsManager
+    if (AutoSendPrefs.isSmsAutoSendEnabled(context)) {
+        return sendSmsDirect(context, phone, message)
+    }
+
+    // Otherwise open the SMS app with prefilled message (original behavior)
     return try {
         val intent = Intent(Intent.ACTION_VIEW, "sms:$phone".toUri())
             .putExtra("sms_body", message)
         context.startActivity(intent)
         ContactActionResult.Success
     } catch (e: ActivityNotFoundException) {
+        ContactActionResult.NoHandler
+    }
+}
+
+/**
+ * Sends an SMS directly in the background using [SmsManager].
+ * Handles multi-part messages automatically (the template is > 160 chars).
+ */
+private fun sendSmsDirect(context: Context, phone: String, message: String): ContactActionResult {
+    return try {
+        @Suppress("DEPRECATION")
+        val smsManager = SmsManager.getDefault()
+        val parts = smsManager.divideMessage(message)
+        smsManager.sendMultipartTextMessage(phone, null, parts, null, null)
+        Log.d("ContactLauncher", "SMS auto-sent to $phone (${parts.size} part(s))")
+        ContactActionResult.AutoSent
+    } catch (e: SecurityException) {
+        // Permission not granted
+        Log.w("ContactLauncher", "SEND_SMS permission not granted", e)
+        ContactActionResult.SmsPermissionNeeded
+    } catch (e: Exception) {
+        Log.e("ContactLauncher", "Failed to send SMS directly", e)
         ContactActionResult.NoHandler
     }
 }

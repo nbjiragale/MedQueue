@@ -21,8 +21,9 @@ object AutoSendPrefs {
     private const val PREFS_NAME           = "medqueue_auto_send"
     private const val KEY_ENABLED          = "auto_send_enabled"
     private const val KEY_PENDING          = "auto_send_pending"
+    private const val KEY_SMS_ENABLED      = "auto_send_sms_enabled"
 
-    // ── User toggle ──────────────────────────────────────────────────────────
+    // ── WhatsApp user toggle ─────────────────────────────────────────────────
 
     fun isAutoSendEnabled(context: Context): Boolean =
         prefs(context).getBoolean(KEY_ENABLED, false)
@@ -31,7 +32,7 @@ object AutoSendPrefs {
         prefs(context).edit { putBoolean(KEY_ENABLED, enabled) }
     }
 
-    // ── Per-action flag ──────────────────────────────────────────────────────
+    // ── Per-action flag (WhatsApp only) ─────────────────────────────────────
 
     fun isAutoSendPending(context: Context): Boolean =
         prefs(context).getBoolean(KEY_PENDING, false)
@@ -42,6 +43,15 @@ object AutoSendPrefs {
 
     fun clearAutoSendPending(context: Context) =
         setAutoSendPending(context, false)
+
+    // ── SMS user toggle ──────────────────────────────────────────────────────
+
+    fun isSmsAutoSendEnabled(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_SMS_ENABLED, false)
+
+    fun setSmsAutoSendEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit { putBoolean(KEY_SMS_ENABLED, enabled) }
+    }
 
     // ── Accessibility service helpers ────────────────────────────────────────
 

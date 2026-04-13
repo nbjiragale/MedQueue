@@ -1,6 +1,10 @@
 package com.niranjan.medqueue.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,6 +32,7 @@ import com.niranjan.medqueue.contact.ContactAction
 import com.niranjan.medqueue.contact.ContactActionResult
 import com.niranjan.medqueue.contact.buildMessage
 import com.niranjan.medqueue.contact.launchContactAction
+import com.niranjan.medqueue.autosend.AutoSendPrefs
 import com.niranjan.medqueue.data.local.RequestEntity
 import com.niranjan.medqueue.data.local.RequestStatus
 import com.niranjan.medqueue.data.settings.SettingsPrefs
@@ -65,6 +70,26 @@ fun RequestDetailScreen(
 
     val medicineLines = remember(request.medicineName) {
         request.medicineName.lines().filter { it.isNotBlank() }
+    }
+
+    // SMS permission launcher — when granted, retry the SMS send
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            // Permission just granted — retry the auto-send
+            val message = buildMessage(settingsPrefs.read(), ContactAction.SMS)
+            val result  = launchContactAction(context, ContactAction.SMS, request.phoneNumber, message)
+            val toast   = when (result) {
+                ContactActionResult.AutoSent -> "SMS sent ✓"
+                else                         -> "SMS failed — try again"
+            }
+            Toast.makeText(context, toast, Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "SMS permission denied", Toast.LENGTH_SHORT).show()
+            // Disable the auto-send toggle since user denied
+            AutoSendPrefs.setSmsAutoSendEnabled(context, false)
+        }
     }
 
     Scaffold(
@@ -256,13 +281,19 @@ fun RequestDetailScreen(
                 showContactSheet = false
                 val message = buildMessage(settingsPrefs.read(), action)
                 val result  = launchContactAction(context, action, request.phoneNumber, message)
-                val toast   = when (result) {
-                    ContactActionResult.Success              -> null
-                    ContactActionResult.InvalidPhone         -> "Invalid phone number"
-                    ContactActionResult.WhatsAppNotInstalled -> "WhatsApp not installed"
-                    ContactActionResult.NoHandler            -> "No app found to handle this action"
+                when (result) {
+                    ContactActionResult.Success              -> { /* opened app */ }
+                    ContactActionResult.AutoSent             ->
+                        Toast.makeText(context, "SMS sent ✓", Toast.LENGTH_SHORT).show()
+                    ContactActionResult.InvalidPhone         ->
+                        Toast.makeText(context, "Invalid phone number", Toast.LENGTH_SHORT).show()
+                    ContactActionResult.WhatsAppNotInstalled ->
+                        Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
+                    ContactActionResult.NoHandler            ->
+                        Toast.makeText(context, "No app found to handle this action", Toast.LENGTH_SHORT).show()
+                    ContactActionResult.SmsPermissionNeeded  ->
+                        smsPermissionLauncher.launch(android.Manifest.permission.SEND_SMS)
                 }
-                toast?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
             }
         )
     }
