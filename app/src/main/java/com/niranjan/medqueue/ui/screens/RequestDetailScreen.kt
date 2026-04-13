@@ -64,6 +64,7 @@ fun RequestDetailScreen(
 ) {
     val context         = LocalContext.current
     var showContactSheet by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     val dateFormat      = remember { SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()) }
     val displayName     = request.customerName.ifBlank { "Unknown Customer" }
     val isPending       = request.status == RequestStatus.PENDING
@@ -103,7 +104,7 @@ fun RequestDetailScreen(
                             tint = Color.White,
                             modifier = Modifier.size(20.dp))
                     }
-                    IconButton(onClick = onDelete) {
+                    IconButton(onClick = { showDeleteConfirm = true }) {
                         Icon(Icons.Filled.Delete, "Delete",
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(20.dp))
@@ -296,6 +297,101 @@ fun RequestDetailScreen(
                 }
             }
         )
+    }
+
+    // ── Delete confirmation dialog ────────────────────────────────────────
+    if (showDeleteConfirm) {
+        AlertDialog(onDismissRequest = { showDeleteConfirm = false }) {
+            Card(
+                shape     = RoundedCornerShape(24.dp),
+                colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                modifier  = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // ── Icon circle ──
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(StatusEmergencyBg.copy(alpha = 0.12f))
+                    ) {
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = null,
+                            tint     = StatusEmergencyBg,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // ── Title ──
+                    Text(
+                        text  = "Delete Request",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // ── Message ──
+                    Text(
+                        text  = "Do you really want to delete this request?\nThis action cannot be undone.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        lineHeight = 20.sp
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    // ── Buttons ──
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Cancel button — outlined, uses app primary green
+                        OutlinedButton(
+                            onClick  = { showDeleteConfirm = false },
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            shape    = RoundedCornerShape(14.dp),
+                            border   = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                        ) {
+                            Text(
+                                "Cancel",
+                                fontWeight = FontWeight.SemiBold,
+                                color      = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        // Delete button — solid red matching emergency badge
+                        Button(
+                            onClick  = {
+                                showDeleteConfirm = false
+                                onDelete()
+                            },
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            shape    = RoundedCornerShape(14.dp),
+                            colors   = ButtonDefaults.buttonColors(
+                                containerColor = StatusEmergencyBg,
+                                contentColor   = StatusEmergencyContent
+                            )
+                        ) {
+                            Icon(Icons.Filled.Delete, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Delete", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

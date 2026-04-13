@@ -30,6 +30,15 @@
             </PendingDiffInfo>
           </value>
         </entry>
+        <entry key="/Screen (snapshot).kt">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="/Screen (snapshot).kt" />
+              <option name="originalContent" value="package com.niranjan.medqueue.navigation&#10;&#10;import com.niranjan.medqueue.data.local.RequestEntity&#10;&#10;sealed class Screen {&#10;    object Home        : Screen()&#10;    object RequestList : Screen()&#10;    object Settings    : Screen()&#10;    data class RequestDetail(val request: RequestEntity) : Screen()&#10;    data class EditRequest(val request: RequestEntity)   : Screen()&#10;}&#10;&#10;enum class FilterTag(val label: String) {&#10;    ALL(&quot;All&quot;), TODAY(&quot;Today&quot;), PENDING(&quot;Pending&quot;), DELIVERED(&quot;Delivered&quot;)&#10;}&#10;&#10;" />
+              <option name="updatedContent" value="package com.niranjan.medqueue.navigation&#10;&#10;import com.niranjan.medqueue.data.local.RequestEntity&#10;&#10;sealed class Screen {&#10;    object Splash      : Screen()&#10;    object Home        : Screen()&#10;    object RequestList : Screen()&#10;    object Settings    : Screen()&#10;    data class RequestDetail(val request: RequestEntity) : Screen()&#10;    data class EditRequest(val request: RequestEntity)   : Screen()&#10;}&#10;&#10;enum class FilterTag(val label: String) {&#10;    ALL(&quot;All&quot;), TODAY(&quot;Today&quot;), PENDING(&quot;Pending&quot;), DELIVERED(&quot;Delivered&quot;)&#10;}&#10;&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
         <entry key="/WhatsAppAutoSendService (snapshot).kt">
           <value>
             <PendingDiffInfo>

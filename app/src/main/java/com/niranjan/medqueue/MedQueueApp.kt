@@ -8,7 +8,7 @@ import com.niranjan.medqueue.ui.screens.*
 
 @Composable
 fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
-    var screen: Screen by remember { mutableStateOf(Screen.RequestList) }
+    var screen: Screen by remember { mutableStateOf(Screen.Splash as Screen) }
     val requests by vm.requests.collectAsState()
     val emergencyIds by vm.emergencyIds.collectAsState()
 
@@ -17,6 +17,9 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
     }
 
     when (val s = screen) {
+        Screen.Splash -> SplashScreen(
+            onFinished = { screen = Screen.RequestList }
+        )
         Screen.Home -> HomeScreen(
             onSave = { name, phone, medicine, isEmergency ->
                 vm.addRequest(name, phone, medicine, isEmergency)

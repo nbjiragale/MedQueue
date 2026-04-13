@@ -3,6 +3,7 @@ package com.niranjan.medqueue.navigation
 import com.niranjan.medqueue.data.local.RequestEntity
 
 sealed class Screen {
+    object Splash      : Screen()
     object Home        : Screen()
     object RequestList : Screen()
     object Settings    : Screen()

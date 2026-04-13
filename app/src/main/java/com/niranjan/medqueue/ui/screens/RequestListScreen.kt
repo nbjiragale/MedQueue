@@ -112,93 +112,46 @@ fun RequestListScreen(
                             colors = listOf(HeaderGradientStart, HeaderGradientMid, HeaderGradientEnd)
                         )
                     )
-                    .padding(top = 16.dp, bottom = 24.dp)
+                    .padding(top = 16.dp, bottom = 16.dp)
             ) {
-                // ── Top row: "M" avatar + title + bell icon ──────────────
+                // ── Top row: "M" avatar + title ──────────────
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    // Green "M" avatar
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.2f))
                     ) {
-                        // Green "M" avatar
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.2f))
-                        ) {
-                            Text(
-                                "M",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = stringResource(R.string.app_name),
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                color = Color.White
-                            )
-                            Text(
-                                text = stringResource(R.string.app_subtitle),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.7f)
-                            )
-                        }
+                        Text(
+                            "M",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     }
-                    // Bell icon
-                    IconButton(onClick = { /* notifications */ }) {
-                        Icon(
-                            Icons.Filled.Notifications,
-                            contentDescription = stringResource(R.string.notification),
-                            tint = Color(0xFFFFD54F),
-                            modifier = Modifier.size(24.dp)
+                    Column {
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
+                        Text(
+                            text = stringResource(R.string.app_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.7f)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
 
-                // ── Stats pills row ──────────────────────────────────────
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    StatPill(
-                        value = requests.size.toString(),
-                        label = stringResource(R.string.stat_total),
-                        bgColor = StatTotalBg,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatPill(
-                        value = pendingCount.toString(),
-                        label = stringResource(R.string.stat_pending),
-                        bgColor = StatPendingBg,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatPill(
-                        value = deliveredCount.toString(),
-                        label = stringResource(R.string.stat_delivered),
-                        bgColor = StatDeliveredBg,
-                        modifier = Modifier.weight(1f)
-                    )
-                    StatPill(
-                        value = todayCount.toString(),
-                        label = stringResource(R.string.stat_today),
-                        bgColor = StatTodayBg,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -245,22 +198,30 @@ fun RequestListScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             // ── Filter chips ─────────────────────────────────────────────
-            Row(
+            LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
                     .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
-                FilterTag.entries.forEach { tag ->
+                items(FilterTag.entries.size) { index ->
+                    val tag = FilterTag.entries[index]
+                    val count = when (tag) {
+                        FilterTag.ALL       -> requests.size
+                        FilterTag.TODAY     -> todayCount
+                        FilterTag.PENDING   -> pendingCount
+                        FilterTag.DELIVERED -> deliveredCount
+                    }
                     FilterChip(
                         selected = activeFilter == tag,
                         onClick  = { activeFilter = tag },
                         label    = {
                             Text(
-                                tag.label,
+                                "${tag.label} ($count)",
                                 fontWeight = if (activeFilter == tag) FontWeight.SemiBold else FontWeight.Normal,
-                                fontSize   = 13.sp
+                                fontSize   = 13.sp,
+                                maxLines   = 1
                             )
                         },
                         shape  = RoundedCornerShape(50),
@@ -312,40 +273,6 @@ fun RequestListScreen(
     }
 }
 
-// ── Stat pill (inside gradient header) ────────────────────────────────────────
-
-@Composable
-private fun StatPill(
-    value: String,
-    label: String,
-    bgColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        color = bgColor
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = value,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = label,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White.copy(alpha = 0.85f)
-            )
-        }
-    }
-}
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
