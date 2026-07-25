@@ -4,464 +4,306 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.niranjan.medqueue.R
+import com.niranjan.medqueue.contact.formatForDisplay
 import com.niranjan.medqueue.data.local.RequestEntity
 import com.niranjan.medqueue.data.local.RequestStatus
 import com.niranjan.medqueue.navigation.FilterTag
-import com.niranjan.medqueue.ui.components.InitialsAvatar
-import com.niranjan.medqueue.ui.components.MedPill
+import com.niranjan.medqueue.ui.components.*
+import com.niranjan.medqueue.ui.formatRelative
+import com.niranjan.medqueue.ui.startOfDay
 import com.niranjan.medqueue.ui.theme.*
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ── REQUEST LIST SCREEN  (redesigned to match gradient-header mockup)
+// QUEUE — the landing screen
 // ══════════════════════════════════════════════════════════════════════════════
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RequestListScreen(
     requests: List<RequestEntity>,
-    emergencyIds: Set<Int> = emptySet(),
     onAddClick: () -> Unit,
     onItemClick: (RequestEntity) -> Unit,
     bottomBar: @Composable () -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var activeFilter by remember { mutableStateOf(FilterTag.ALL) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var filter by rememberSaveable { mutableStateOf(FilterTag.ALL) }
 
-    val todayStart = remember {
-        Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0);      set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+    val pendingCount = remember(requests) { requests.count { it.status == RequestStatus.PENDING } }
+
+    // Recomputed against the request list rather than remembered once, so the
+    // count stays right if the app is left open across midnight.
+    val todayCount = remember(requests) {
+        val dayStart = startOfDay(System.currentTimeMillis())
+        requests.count { it.createdAt >= dayStart }
     }
 
-    val pendingCount   = remember(requests) { requests.count { it.status == RequestStatus.PENDING } }
-    val deliveredCount = remember(requests) { requests.count { it.status == RequestStatus.DELIVERED } }
-    val todayCount     = remember(requests) { requests.count { it.createdAt >= todayStart } }
-
-    val filteredRequests = remember(requests, searchQuery, activeFilter) {
+    val visible = remember(requests, query, filter) {
+        val q = query.trim().lowercase()
         requests.filter { req ->
-            val q = searchQuery.trim().lowercase()
-            val matchesSearch = q.isBlank() ||
+            val matchesQuery = q.isBlank() ||
                     req.customerName.lowercase().contains(q) ||
-                    req.phoneNumber.contains(q)
-            val matchesTag = when (activeFilter) {
+                    req.phoneNumber.contains(q) ||
+                    req.medicineName.lowercase().contains(q)
+            val matchesFilter = when (filter) {
                 FilterTag.ALL       -> true
-                FilterTag.TODAY     -> req.createdAt >= todayStart
                 FilterTag.PENDING   -> req.status == RequestStatus.PENDING
                 FilterTag.DELIVERED -> req.status == RequestStatus.DELIVERED
             }
-            matchesSearch && matchesTag
+            matchesQuery && matchesFilter
         }
     }
 
     Scaffold(
         bottomBar = bottomBar,
+        containerColor = Paper,
+        // Headers and the bottom bar consume the system-bar insets themselves.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             FloatingActionButton(
-                onClick        = onAddClick,
-                shape          = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor   = MaterialTheme.colorScheme.onPrimary
+                onClick = onAddClick,
+                shape = RoundedCornerShape(17.dp),
+                containerColor = Teal,
+                contentColor = Color.White,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 10.dp),
+                modifier = Modifier.size(54.dp)
             ) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.new_request))
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_request))
             }
-        },
-        containerColor = PageBackground
+        }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-        ) {
-            // ══════════════════════════════════════════════════════════════
-            // ── Gradient header block (title + stats)
-            // ══════════════════════════════════════════════════════════════
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(HeaderGradientStart, HeaderGradientMid, HeaderGradientEnd)
-                        )
-                    )
-                    .padding(top = 16.dp, bottom = 16.dp)
-            ) {
-                // ── Top row: "M" avatar + title ──────────────
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Green "M" avatar
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f))
-                    ) {
-                        Text(
-                            "M",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
-                        Text(
-                            text = stringResource(R.string.app_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                    }
-                }
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
 
-
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ── Search bar ───────────────────────────────────────────────
-            OutlinedTextField(
-                value         = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder   = {
-                    Text(
-                        stringResource(R.string.search_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Filled.Search,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(20.dp)
-                    )
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Filled.Close, stringResource(R.string.back), modifier = Modifier.size(18.dp))
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(28.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor   = MaterialTheme.colorScheme.surface
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // ── Filter chips ─────────────────────────────────────────────
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp)
-            ) {
-                items(FilterTag.entries.size) { index ->
-                    val tag = FilterTag.entries[index]
-                    val count = when (tag) {
-                        FilterTag.ALL       -> requests.size
-                        FilterTag.TODAY     -> todayCount
-                        FilterTag.PENDING   -> pendingCount
-                        FilterTag.DELIVERED -> deliveredCount
-                    }
-                    FilterChip(
-                        selected = activeFilter == tag,
-                        onClick  = { activeFilter = tag },
-                        label    = {
-                            Text(
-                                "${tag.label} ($count)",
-                                fontWeight = if (activeFilter == tag) FontWeight.SemiBold else FontWeight.Normal,
-                                fontSize   = 13.sp,
-                                maxLines   = 1
-                            )
-                        },
-                        shape  = RoundedCornerShape(50),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-                            selectedLabelColor     = MaterialTheme.colorScheme.surface,
-                            containerColor         = MaterialTheme.colorScheme.surface
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = MaterialTheme.colorScheme.outlineVariant,
-                            enabled = true,
-                            selected = activeFilter == tag
-                        )
-                    )
-                }
-            }
-
-            // ── Divider ──────────────────────────────────────────────────
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // ── List / empty state ───────────────────────────────────────
-            if (filteredRequests.isEmpty()) {
-                EmptyState(
-                    hasRequests = requests.isNotEmpty(),
-                    modifier = Modifier.fillMaxSize()
+            // ── White header block: title, counts, search, filters ──────────
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                ScreenHeader(
+                    title = stringResource(R.string.queue_title),
+                    subtitle = stringResource(R.string.queue_subtitle, pendingCount, todayCount)
                 )
+
+                SearchField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterTag.entries.forEach { tag ->
+                        FilterPill(
+                            label = stringResource(tag.labelRes()),
+                            selected = filter == tag,
+                            onClick = { filter = tag }
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+
+            // ── List ────────────────────────────────────────────────────────
+            if (visible.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    if (requests.isEmpty()) {
+                        EmptyNote(
+                            text = stringResource(R.string.empty_no_requests),
+                            hint = stringResource(R.string.empty_no_requests_hint),
+                            modifier = Modifier.padding(top = 48.dp)
+                        )
+                    } else {
+                        EmptyNote(
+                            text = stringResource(R.string.empty_no_matches),
+                            modifier = Modifier.padding(top = 48.dp)
+                        )
+                    }
+                }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 96.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(filteredRequests, key = { it.id }) { request ->
-                        RequestListItem(
-                            request     = request,
-                            isEmergency = request.id in emergencyIds,
-                            onClick     = { onItemClick(request) }
-                        )
+                    items(visible, key = { it.id }) { request ->
+                        RequestRow(request = request, onClick = { onItemClick(request) })
                     }
-                    item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
         }
     }
 }
 
-
-// ── Empty state ───────────────────────────────────────────────────────────────
-
-@Composable
-private fun EmptyState(hasRequests: Boolean, modifier: Modifier = Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(40.dp)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Text(if (hasRequests) "🔍" else "💊", fontSize = 30.sp)
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text  = stringResource(if (hasRequests) R.string.no_matches else R.string.no_requests_yet),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text      = stringResource(if (hasRequests) R.string.try_different_search else R.string.tap_plus_hint),
-                style     = MaterialTheme.typography.bodySmall,
-                color     = MaterialTheme.colorScheme.outline,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
+private fun FilterTag.labelRes(): Int = when (this) {
+    FilterTag.ALL       -> R.string.filter_all
+    FilterTag.PENDING   -> R.string.filter_pending
+    FilterTag.DELIVERED -> R.string.filter_delivered
 }
 
-// ── Smart date formatter ──────────────────────────────────────────────────────
-
-private fun formatSmartDate(timestamp: Long): String {
-    val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
-    val todayCal = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
-    }
-    val yesterdayCal = (todayCal.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -1) }
-
-    return when {
-        timestamp >= todayCal.timeInMillis     -> {
-            val dateFormat = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-            dateFormat.format(Date(timestamp))
-        }
-        timestamp >= yesterdayCal.timeInMillis  -> "Yesterday, ${timeFormat.format(Date(timestamp))}"
-        else -> {
-            val dateFormat = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
-            dateFormat.format(Date(timestamp))
-        }
-    }
-}
-
-// ── Request list card (matches the reference image) ───────────────────────────
+// ── Search ────────────────────────────────────────────────────────────────────
 
 @Composable
-fun RequestListItem(request: RequestEntity, isEmergency: Boolean = false, onClick: () -> Unit) {
-    val displayName = request.customerName.ifBlank { "Unknown" }
-    val isPending   = request.status == RequestStatus.PENDING
-
-    // Status badge colours
-    val statusLabel    = if (isPending) "Pending" else "Delivered"
-    val statusDotColor = if (isPending) StatusPendingContent else StatusDeliveredContent
-    val statusTextColor = if (isPending) StatusPendingContent else StatusDeliveredContent
-    val statusBgColor   = if (isPending) StatusPendingBg else StatusDeliveredBg
-
-    // Emergency → red bottom border accent
-    val cardBorder = if (isEmergency) {
-        androidx.compose.foundation.BorderStroke(1.dp, StatusEmergencyBg.copy(alpha = 0.5f))
-    } else null
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape     = RoundedCornerShape(16.dp),
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border    = cardBorder
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // ── Top row: avatar + name/phone + status ────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
-            ) {
-                // Circle avatar
-                InitialsAvatar(name = displayName, size = 44)
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Name + phone
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = displayName,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+private fun SearchField(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fillMaxWidth(),
+        placeholder = {
+            Text(
+                stringResource(R.string.search_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Muted
+            )
+        },
+        leadingIcon = {
+            Icon(Icons.Filled.Search, contentDescription = null, tint = Muted, modifier = Modifier.size(18.dp))
+        },
+        trailingIcon = {
+            if (value.isNotEmpty()) {
+                IconButton(onClick = { onValueChange("") }) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.action_back),
+                        tint = Muted,
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            Icons.Filled.Phone,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.outline
-                        )
-                        Text(
-                            text = "+91 ${request.phoneNumber}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
-
-                // Status badge
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = statusBgColor
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(statusDotColor)
-                        )
-                        Text(
-                            text = statusLabel,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = statusTextColor
-                        )
-                    }
                 }
             }
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(12.dp),
+        textStyle = MaterialTheme.typography.bodyLarge,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor   = Paper,
+            unfocusedContainerColor = Paper,
+            focusedIndicatorColor   = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedTextColor        = Ink,
+            unfocusedTextColor      = Ink,
+            cursorColor             = Teal
+        )
+    )
+}
 
-            // ── Medicine pills row (if any) ──────────────────────────
-            val medicineLines = remember(request.medicineName) {
-                request.medicineName.lines().filter { it.isNotBlank() }
-            }
-            if (medicineLines.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val visibleMeds = medicineLines.take(2)
-                    visibleMeds.forEach { med ->
-                        MedPill(text = med.take(20))
-                    }
-                    val remaining = medicineLines.size - 2
-                    if (remaining > 0) {
-                        Text(
-                            text = "+$remaining more",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
-            }
+// ── Filter pill ───────────────────────────────────────────────────────────────
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // ── Date ─────────────────────────────────────────────────
-            Text(
-                text = formatSmartDate(request.createdAt),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
+@Composable
+private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (selected) Teal else Paper,
+        onClick = onClick
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold
+            ),
+            color = if (selected) Color.White else Muted,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+        )
     }
 }
 
+// ── Row ───────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun RequestRow(request: RequestEntity, onClick: () -> Unit) {
+    val medicines = remember(request.medicineName) {
+        request.medicineName.lines().filter { it.isNotBlank() }
+    }
+    val noName = request.customerName.isBlank()
+    val noNameLabel = stringResource(R.string.no_name_provided)
+
+    val secondary = remember(request.customerName, medicines, noNameLabel) {
+        val who = if (noName) noNameLabel else request.customerName
+        if (medicines.isEmpty()) who else "$who · ${medicines.joinToString(", ")}"
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 1.dp,
+        onClick = onClick
+    ) {
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+            // Emergency accent runs the full height of the card's left edge.
+            if (request.isEmergency) {
+                Box(
+                    modifier = Modifier
+                        .width(3.dp)
+                        .fillMaxHeight()
+                        .background(Red)
+                )
+            }
+
+            Row(
+                modifier = Modifier.padding(
+                    start = if (request.isEmergency) 12.dp else 14.dp,
+                    end = 14.dp,
+                    top = 14.dp,
+                    bottom = 14.dp
+                ),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                PhoneTile(request.phoneNumber)
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = formatForDisplay(request.phoneNumber),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (request.isEmergency) {
+                            UrgentPill(stringResource(R.string.badge_urgent))
+                        }
+                    }
+                    Spacer(Modifier.height(3.dp))
+                    SecondaryLine(secondary, italic = noName)
+                }
+
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    StatusPill(
+                        status = request.status,
+                        pendingLabel = stringResource(R.string.status_pending),
+                        deliveredLabel = stringResource(R.string.status_delivered)
+                    )
+                    Text(
+                        text = formatRelative(request.createdAt),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
+                        color = Muted,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+}

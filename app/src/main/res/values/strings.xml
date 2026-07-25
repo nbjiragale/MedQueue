@@ -1,87 +1,133 @@
 <resources>
     <string name="app_name">MedQueue</string>
-    <string name="app_subtitle">Medicine requests</string>
-    <string name="stat_total">Total</string>
-    <string name="stat_pending">Pending</string>
-    <string name="stat_delivered">Delivered</string>
-    <string name="stat_today">Today</string>
-    <string name="search_hint">Search by name or phone…</string>
+    <string name="app_tagline">Medicine requests, simplified</string>
+
+    <!-- ── Bottom navigation ─────────────────────────────────────────────── -->
+    <string name="nav_queue">Queue</string>
+    <string name="nav_new">New</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- ── Onboarding ────────────────────────────────────────────────────── -->
+    <string name="onboarding_title">Set up your shop</string>
+    <string name="onboarding_subtitle">Takes less than a minute — used on receipts and messages to customers</string>
+    <string name="onboarding_prefs_title">Stay on top of the queue</string>
+    <string name="onboarding_prefs_subtitle">Choose which reminders you want. You can change these any time in Settings.</string>
+    <string name="onboarding_shop_details">Shop details</string>
+    <string name="onboarding_your_name">Your name</string>
+    <string name="onboarding_your_name_hint">Owner / staff name</string>
+    <string name="onboarding_continue">Continue</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_back">Back</string>
+
+    <!-- ── Shared field labels ───────────────────────────────────────────── -->
+    <string name="label_shop_name">Shop name</string>
+    <string name="label_shop_name_hint">e.g. Ainapur Medical Store</string>
+    <string name="label_address">Address</string>
+    <string name="label_address_hint">Shop address</string>
+    <string name="label_name">Name</string>
+    <string name="label_phone">Phone</string>
+    <string name="label_phone_hint">10-digit mobile number</string>
+    <string name="label_optional">(optional)</string>
+    <string name="phone_prefix">+91</string>
+
+    <!-- ── New / edit request ────────────────────────────────────────────── -->
+    <string name="new_request">New request</string>
+    <string name="new_request_subtitle">Save a customer\'s medicine order</string>
+    <string name="edit_request">Edit request</string>
+    <string name="edit_request_subtitle">Update customer or medicine details</string>
+    <string name="section_customer">Customer</string>
+    <string name="section_medicine">Medicine</string>
+    <string name="section_prescription">Prescription</string>
+    <string name="customer_name_hint">Customer\'s full name</string>
+    <string name="medicines_hint">One per line — e.g. Paracetamol 650mg</string>
+    <string name="prescription_empty">Drop or attach a prescription photo</string>
+    <string name="prescription_none">No prescription attached</string>
+    <string name="action_camera">Camera</string>
+    <string name="action_gallery">Gallery</string>
+    <string name="action_remove_photo">Remove photo</string>
+    <string name="mark_emergency">Mark as emergency</string>
+    <string name="save_request">Save request</string>
+    <string name="save_changes">Save changes</string>
+    <string name="saving">Saving…</string>
+    <string name="cancel">Cancel</string>
+    <string name="phone_required">Phone number is required</string>
+    <string name="phone_invalid">Enter a valid 10-digit number</string>
+    <string name="camera_unavailable">No camera app available</string>
+    <string name="photo_failed">Could not attach that photo</string>
+
+    <!-- ── Queue ─────────────────────────────────────────────────────────── -->
+    <string name="queue_title">Queue</string>
+    <string name="queue_subtitle">%1$d pending · %2$d today</string>
+    <string name="search_hint">Search name or phone</string>
     <string name="filter_all">All</string>
-    <string name="filter_today">Today</string>
     <string name="filter_pending">Pending</string>
     <string name="filter_delivered">Delivered</string>
     <string name="status_pending">Pending</string>
     <string name="status_delivered">Delivered</string>
-    <string name="status_emergency">Emergency</string>
-    <string name="new_request">New Request</string>
-    <string name="new_request_subtitle">Fill in customer details</string>
-    <string name="customer_details">Customer Details</string>
-    <string name="customer_details_subtitle">Primary contact info</string>
-    <string name="customer_name">CUSTOMER NAME</string>
-    <string name="customer_name_hint">Enter full name</string>
-    <string name="phone_number">PHONE NUMBER</string>
-    <string name="phone_prefix">+91</string>
-    <string name="medicines">Medicines</string>
-    <string name="medicines_subtitle">List required medicines (optional)</string>
-    <string name="medicines_hint">Type medicine names, one per line…</string>
-    <string name="mark_emergency">Mark Emergency</string>
-    <string name="save_request">Save Request</string>
-    <string name="cancel">Cancel</string>
+    <string name="badge_urgent">Urgent</string>
+    <string name="badge_emergency">Emergency</string>
+    <string name="no_name_provided">No name provided</string>
+    <string name="empty_no_matches">No more requests match this filter</string>
+    <string name="empty_no_requests">No requests yet</string>
+    <string name="empty_no_requests_hint">Tap + to save your first customer request</string>
+    <string name="add_request">Add request</string>
+
+    <!-- ── Detail ────────────────────────────────────────────────────────── -->
+    <string name="detail_title">Request</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_back">Back</string>
+    <string name="section_medicines">Medicines</string>
+    <string name="requested_at">Requested %1$s</string>
+    <string name="action_call">Call</string>
+    <string name="action_whatsapp">WhatsApp</string>
+    <string name="action_sms">SMS</string>
+    <string name="mark_delivered">Mark delivered</string>
+    <string name="delete_confirm_title">Delete request</string>
+    <string name="delete_confirm_body">This removes the request and its prescription photo. It cannot be undone.</string>
+
+    <!-- ── Settings ──────────────────────────────────────────────────────── -->
     <string name="settings_title">Settings</string>
-    <string name="settings_subtitle">Manage your pharmacy details</string>
-    <string name="settings_info_banner">These details appear in every message sent to customers.</string>
-    <string name="shop_information">Shop Information</string>
-    <string name="shop_info_subtitle">Your pharmacy / store name</string>
-    <string name="shop_name">SHOP NAME</string>
-    <string name="shop_address">SHOP ADDRESS</string>
-    <string name="primary_contact">Primary Contact</string>
-    <string name="primary_contact_subtitle">First point of contact</string>
-    <string name="secondary_contact">Secondary Contact</string>
-    <string name="secondary_contact_subtitle">Optional additional contact</string>
-    <string name="name_label">NAME</string>
-    <string name="phone_label">PHONE</string>
-    <string name="save_settings">Save Settings</string>
-    <string name="settings_saved">Settings saved</string>
-    <string name="back">Back</string>
-    <string name="new_request_nav">New</string>
-    <string name="queue_nav">Queue</string>
-    <string name="settings_nav">Settings</string>
-    <string name="no_matches">No matches found</string>
-    <string name="try_different_search">Try a different search term</string>
-    <string name="no_requests_yet">No requests yet</string>
-    <string name="tap_plus_hint">Tap + to add your first request</string>
-    <string name="request_detail">Request Detail</string>
-    <string name="edit_request">Edit Request</string>
-    <string name="save_changes">Save Changes</string>
-    <string name="contact">Contact</string>
-    <string name="mark_delivered">Mark Delivered</string>
-    <string name="message_preview">Message Preview</string>
-    <string name="message_preview_subtitle">How customers will see your message</string>
-    <string name="whatsapp">WhatsApp</string>
-    <string name="contact_customer_via">Contact customer via</string>
-    <string name="plus_more">+%1$d more</string>
-    <string name="phone_required">Phone number is required</string>
-    <string name="phone_invalid">Enter a valid 10-digit number</string>
-    <string name="unknown">Unknown</string>
-    <string name="unknown_customer">Unknown Customer</string>
-    <string name="notification">Notifications</string>
-
-    <!-- Auto-send -->
-    <string name="auto_send_service_description">Allows MedQueue to automatically tap the Send button in WhatsApp so messages are sent without manual intervention. Only activates when you trigger a message from MedQueue.</string>
-    <string name="auto_send_whatsapp">Auto-Send WhatsApp</string>
-    <string name="auto_send_subtitle">Automatically tap Send in WhatsApp</string>
-    <string name="auto_send_info">When enabled, tapping WhatsApp in the contact sheet will open WhatsApp, auto-tap Send, and return you here. No extra tap needed.</string>
-    <string name="auto_send_enable_service">Enable Accessibility Service</string>
-    <string name="auto_send_service_active">✓ Service is active</string>
+    <string name="settings_subtitle">Shop details &amp; message template</string>
+    <string name="section_shop">Shop</string>
+    <string name="section_primary_contact">Primary contact</string>
+    <string name="section_secondary_contact">Secondary contact</string>
+    <string name="section_message_preview">Message preview</string>
+    <string name="section_reminders">Reminders</string>
+    <string name="auto_send_whatsapp">Auto-send on WhatsApp</string>
+    <string name="auto_send_whatsapp_sub">Sends automatically when marked delivered</string>
+    <string name="auto_send_whatsapp_sub_onboarding">Notify customers automatically when marked delivered</string>
+    <string name="auto_send_sms">Auto-send SMS</string>
+    <string name="auto_send_sms_sub">Send SMS in the background without opening the SMS app</string>
+    <string name="auto_send_service_active">Accessibility service is active</string>
     <string name="auto_send_service_inactive">Service not enabled — tap to open settings</string>
-    <string name="auto_send_sent_toast">Message auto-sent ✓</string>
-
-    <!-- Auto-send SMS -->
-    <string name="auto_send_sms">Auto-Send SMS</string>
-    <string name="auto_send_sms_subtitle">Send SMS instantly in background</string>
-    <string name="auto_send_sms_info">When enabled, tapping SMS in the contact sheet sends the message directly — no SMS app opens. Requires SEND_SMS permission.</string>
-    <string name="auto_send_sms_sent_toast">SMS sent ✓</string>
-    <string name="auto_send_sms_permission_needed">SMS permission required — please grant it</string>
-    <string name="auto_send_sms_permission_granted">✓ SMS permission granted</string>
+    <string name="auto_send_sms_permission_granted">SMS permission granted</string>
     <string name="auto_send_sms_permission_denied">Permission denied — tap to grant</string>
+    <string name="reminder_pending_alerts">Pending request alerts</string>
+    <string name="reminder_pending_alerts_sub">Notify if a request sits unactioned 24h+</string>
+    <string name="reminder_daily_summary">Daily summary</string>
+    <string name="reminder_daily_summary_sub">End-of-day count of pending requests</string>
+    <string name="save_settings">Save settings</string>
+    <string name="settings_saved">Settings saved</string>
+    <string name="notifications_blocked">Turn on notifications to receive reminders</string>
+
+    <!-- ── Accessibility service ─────────────────────────────────────────── -->
+    <string name="auto_send_service_description">Allows MedQueue to automatically tap the Send button in WhatsApp so messages are sent without manual intervention. Only activates when you trigger a message from MedQueue.</string>
+
+    <!-- ── Reminder notifications ────────────────────────────────────────── -->
+    <string name="channel_pending_name">Pending request alerts</string>
+    <string name="channel_pending_desc">Reminds you when a customer request has gone unactioned for a day</string>
+    <string name="channel_summary_name">Daily summary</string>
+    <string name="channel_summary_desc">End-of-day count of requests still outstanding</string>
+    <string name="reminder_pending_title">Requests still waiting</string>
+    <string name="reminder_summary_title">End of day</string>
+
+    <plurals name="reminder_pending_body">
+        <item quantity="one">%1$d request has been pending for %2$s.</item>
+        <item quantity="other">%1$d requests are pending — the oldest for %2$s.</item>
+    </plurals>
+    <plurals name="reminder_summary_body">
+        <item quantity="one">%1$d request is still pending.</item>
+        <item quantity="other">%1$d requests are still pending.</item>
+    </plurals>
 </resources>

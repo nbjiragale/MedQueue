@@ -2,552 +2,231 @@ package com.niranjan.medqueue.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.niranjan.medqueue.R
 import com.niranjan.medqueue.autosend.AutoSendPrefs
 import com.niranjan.medqueue.contact.buildMessage
 import com.niranjan.medqueue.data.settings.AppSettings
 import com.niranjan.medqueue.data.settings.SettingsPrefs
-import com.niranjan.medqueue.ui.components.FormCard
-import com.niranjan.medqueue.ui.components.GradientHeader
-import com.niranjan.medqueue.ui.components.SectionLabel
+import com.niranjan.medqueue.reminders.Notifications
+import com.niranjan.medqueue.reminders.Reminders
+import com.niranjan.medqueue.ui.components.*
 import com.niranjan.medqueue.ui.theme.*
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ── SETTINGS SCREEN
+// SETTINGS
 // ══════════════════════════════════════════════════════════════════════════════
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    settingsPrefs : SettingsPrefs,
-    onBack        : () -> Unit,
-    bottomBar     : @Composable () -> Unit = {}
+    settingsPrefs: SettingsPrefs,
+    onBack: () -> Unit,
+    bottomBar: @Composable () -> Unit = {}
 ) {
-    val context          = LocalContext.current
-    val current          = remember { settingsPrefs.read() }
-    var shopName         by remember { mutableStateOf(current.shopName) }
-    var shopAddress      by remember { mutableStateOf(current.shopAddress) }
-    var contact1Name     by remember { mutableStateOf(current.contact1Name) }
-    var contact1Phone    by remember { mutableStateOf(current.contact1Phone) }
-    var contact2Name     by remember { mutableStateOf(current.contact2Name) }
-    var contact2Phone    by remember { mutableStateOf(current.contact2Phone) }
+    val context = LocalContext.current
+    val saved = remember { settingsPrefs.read() }
 
-    val previewMessage = remember(shopName, shopAddress, contact1Name, contact1Phone, contact2Name, contact2Phone) {
-        buildMessage(AppSettings(shopName, shopAddress, contact1Name, contact1Phone, contact2Name, contact2Phone))
+    var shopName      by rememberSaveable { mutableStateOf(saved.shopName) }
+    var shopAddress   by rememberSaveable { mutableStateOf(saved.shopAddress) }
+    var contact1Name  by rememberSaveable { mutableStateOf(saved.contact1Name) }
+    var contact1Phone by rememberSaveable { mutableStateOf(saved.contact1Phone) }
+    var contact2Name  by rememberSaveable { mutableStateOf(saved.contact2Name) }
+    var contact2Phone by rememberSaveable { mutableStateOf(saved.contact2Phone) }
+
+    val preview = remember(shopName, shopAddress, contact1Name, contact1Phone, contact2Name, contact2Phone) {
+        buildMessage(
+            AppSettings(shopName, shopAddress, contact1Name, contact1Phone, contact2Name, contact2Phone)
+        )
     }
 
+    val settingsSaved = stringResource(R.string.settings_saved)
+
     Scaffold(
-        topBar = {
-            Column {
-                GradientHeader(
-                    title    = stringResource(R.string.settings_title),
-                    subtitle = stringResource(R.string.settings_subtitle),
-                    onBack   = onBack
-                )
-                // ── Info banner inside gradient area ────────────────────────
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(HeaderGradientEnd, HeaderGradientEnd.copy(alpha = 0.85f))
+        bottomBar = bottomBar,
+        containerColor = Paper,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+
+            ScreenHeader(
+                title = stringResource(R.string.settings_title),
+                subtitle = stringResource(R.string.settings_subtitle)
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // ── Shop ────────────────────────────────────────────────────
+                DsCard(spacing = 14.dp) {
+                    Eyebrow(stringResource(R.string.section_shop))
+                    DsField(
+                        label = stringResource(R.string.label_shop_name),
+                        value = shopName,
+                        onValueChange = { shopName = it },
+                        placeholder = stringResource(R.string.label_shop_name_hint)
+                    )
+                    DsField(
+                        label = stringResource(R.string.label_address),
+                        value = shopAddress,
+                        onValueChange = { shopAddress = it },
+                        placeholder = stringResource(R.string.label_address_hint)
+                    )
+                }
+
+                // ── Primary contact ─────────────────────────────────────────
+                DsCard(spacing = 14.dp) {
+                    Eyebrow(stringResource(R.string.section_primary_contact))
+                    DsField(
+                        label = stringResource(R.string.label_name),
+                        value = contact1Name,
+                        onValueChange = { contact1Name = it }
+                    )
+                    DsField(
+                        label = stringResource(R.string.label_phone),
+                        value = contact1Phone,
+                        onValueChange = { raw -> contact1Phone = raw.filter(Char::isDigit).take(10) },
+                        prefix = stringResource(R.string.phone_prefix),
+                        keyboardType = KeyboardType.Phone
+                    )
+                }
+
+                // ── Secondary contact ───────────────────────────────────────
+                // Not in the mockup, which assumed the short one-line template.
+                // The bilingual template renders this contact, so the field has
+                // to stay reachable or that line goes permanently blank.
+                DsCard(spacing = 14.dp) {
+                    Eyebrow(stringResource(R.string.section_secondary_contact))
+                    DsField(
+                        label = stringResource(R.string.label_name),
+                        value = contact2Name,
+                        onValueChange = { contact2Name = it },
+                        optionalHint = stringResource(R.string.label_optional)
+                    )
+                    DsField(
+                        label = stringResource(R.string.label_phone),
+                        value = contact2Phone,
+                        onValueChange = { raw -> contact2Phone = raw.filter(Char::isDigit).take(10) },
+                        prefix = stringResource(R.string.phone_prefix),
+                        keyboardType = KeyboardType.Phone
+                    )
+                }
+
+                // ── Message preview ─────────────────────────────────────────
+                DsCard(spacing = 10.dp) {
+                    Eyebrow(stringResource(R.string.section_message_preview))
+                    Surface(shape = RoundedCornerShape(14.dp), color = Paper) {
+                        Text(
+                            text = preview,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Ink,
+                            modifier = Modifier.padding(14.dp)
+                        )
+                    }
+                }
+
+                AutoSendWhatsAppCard()
+                AutoSendSmsCard()
+                RemindersCard(settingsPrefs)
+            }
+
+            // ── Save ────────────────────────────────────────────────────────
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 12.dp)
+            ) {
+                PrimaryButton(
+                    text = stringResource(R.string.save_settings),
+                    onClick = {
+                        settingsPrefs.save(
+                            AppSettings(
+                                shopName.trim(), shopAddress.trim(),
+                                contact1Name.trim(), contact1Phone,
+                                contact2Name.trim(), contact2Phone
                             )
                         )
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 16.dp)
-                ) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape    = RoundedCornerShape(14.dp),
-                        color    = Color.White.copy(alpha = 0.15f)
-                    ) {
-                        Row(
-                            modifier              = Modifier.padding(14.dp),
-                            verticalAlignment     = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Info,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                stringResource(R.string.settings_info_banner),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White
-                            )
-                        }
+                        Toast.makeText(context, settingsSaved, Toast.LENGTH_SHORT).show()
+                        onBack()
                     }
-                }
-            }
-        },
-        bottomBar      = bottomBar,
-        containerColor = PageBackground
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-
-            // ── Shop card ─────────────────────────────────────────────────
-            FormCard {
-                SectionLabel(
-                    icon     = Icons.Filled.Home,
-                    title    = stringResource(R.string.shop_information),
-                    subtitle = stringResource(R.string.shop_info_subtitle),
-                    iconTint = SectionIconGreen
-                )
-                Spacer(Modifier.height(14.dp))
-
-                // SHOP NAME label
-                Text(
-                    text  = stringResource(R.string.shop_name),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight    = FontWeight.Bold,
-                        letterSpacing = 0.8.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = shopName, onValueChange = { shopName = it },
-                    leadingIcon = { Icon(Icons.Filled.Home, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-                    modifier    = Modifier.fillMaxWidth(), singleLine = true,
-                    shape       = RoundedCornerShape(12.dp)
-                )
-                Spacer(Modifier.height(12.dp))
-
-                // SHOP ADDRESS label
-                Text(
-                    text  = stringResource(R.string.shop_address),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight    = FontWeight.Bold,
-                        letterSpacing = 0.8.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = shopAddress, onValueChange = { shopAddress = it },
-                    placeholder = { Text("e.g. Ainapur") },
-                    leadingIcon = { Icon(Icons.Filled.LocationOn, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-                    modifier    = Modifier.fillMaxWidth(), singleLine = true,
-                    shape       = RoundedCornerShape(12.dp)
                 )
             }
-
-            // ── Contact 1 card ────────────────────────────────────────────
-            FormCard {
-                SectionLabel(
-                    icon     = Icons.Filled.Phone,
-                    title    = stringResource(R.string.primary_contact),
-                    subtitle = stringResource(R.string.primary_contact_subtitle),
-                    iconTint = SectionIconGreen
-                )
-                Spacer(Modifier.height(14.dp))
-
-                // NAME label
-                Text(
-                    text  = stringResource(R.string.name_label),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight    = FontWeight.Bold,
-                        letterSpacing = 0.8.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = contact1Name, onValueChange = { contact1Name = it },
-                    leadingIcon = { Icon(Icons.Filled.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                Spacer(Modifier.height(12.dp))
-
-                // PHONE label
-                Text(
-                    text  = stringResource(R.string.phone_label),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight    = FontWeight.Bold,
-                        letterSpacing = 0.8.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(4.dp))
-                OutlinedTextField(
-                    value         = contact1Phone,
-                    onValueChange = { raw -> contact1Phone = raw.filter { it.isDigit() } },
-                    leadingIcon = { Icon(Icons.Filled.Phone, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-                    prefix      = { Text("+91  ", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    modifier    = Modifier.fillMaxWidth(), singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            // ── Contact 2 card ────────────────────────────────────────────
-            FormCard {
-                SectionLabel(
-                    icon     = Icons.Filled.Phone,
-                    title    = stringResource(R.string.secondary_contact),
-                    subtitle = stringResource(R.string.secondary_contact_subtitle),
-                    iconTint = SectionIconPurple
-                )
-                Spacer(Modifier.height(14.dp))
-
-                // NAME label
-                Text(
-                    text  = stringResource(R.string.name_label),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight    = FontWeight.Bold,
-                        letterSpacing = 0.8.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = contact2Name, onValueChange = { contact2Name = it },
-                    leadingIcon = { Icon(Icons.Filled.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                Spacer(Modifier.height(12.dp))
-
-                // PHONE label
-                Text(
-                    text  = stringResource(R.string.phone_label),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight    = FontWeight.Bold,
-                        letterSpacing = 0.8.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(4.dp))
-                OutlinedTextField(
-                    value         = contact2Phone,
-                    onValueChange = { raw -> contact2Phone = raw.filter { it.isDigit() } },
-                    leadingIcon = { Icon(Icons.Filled.Phone, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp)) },
-                    prefix      = { Text("+91  ", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    modifier    = Modifier.fillMaxWidth(), singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            // ── Message preview card ──────────────────────────────────────
-            ElevatedCard(
-                modifier  = Modifier.fillMaxWidth(),
-                shape     = RoundedCornerShape(18.dp),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-                colors    = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    // Header row with icon
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF25D366).copy(alpha = 0.15f))
-                        ) {
-                            Text("💬", fontSize = 16.sp)
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(R.string.message_preview),
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                stringResource(R.string.message_preview_subtitle),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                        // WhatsApp badge
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF25D366).copy(alpha = 0.12f)
-                        ) {
-                            Text(
-                                stringResource(R.string.whatsapp),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF25D366)
-                                )
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-                    HorizontalDivider(
-                        thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                    )
-                    Spacer(Modifier.height(16.dp))
-
-                    // Chat bubble background
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 4.dp),
-                            shape = RoundedCornerShape(
-                                topStart = 4.dp,
-                                topEnd = 16.dp,
-                                bottomStart = 16.dp,
-                                bottomEnd = 16.dp
-                            ),
-                            color = Color(0xFFDCF8C6),
-                            shadowElevation = 0.5.dp
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Text(
-                                    text     = previewMessage,
-                                    style    = MaterialTheme.typography.bodySmall.copy(
-                                        lineHeight = 18.sp,
-                                        color = Color(0xFF1B1B1B)
-                                    )
-                                )
-                                Spacer(Modifier.height(6.dp))
-                                // Timestamp row
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "Preview",
-                                        style = MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 10.sp,
-                                            color = Color(0xFF6B8F71)
-                                        )
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("✓✓", fontSize = 10.sp, color = Color(0xFF53BDEB))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ── Auto-send card ──────────────────────────────────────────
-            AutoSendCard()
-            AutoSendSmsCard()
-
-            // ── Save button (gradient) ──────────────────────────────────
-            Spacer(Modifier.height(4.dp))
-            Button(
-                onClick = {
-                    settingsPrefs.save(AppSettings(shopName, shopAddress, contact1Name, contact1Phone, contact2Name, contact2Phone))
-                    Toast.makeText(context, context.getString(R.string.settings_saved), Toast.LENGTH_SHORT).show()
-                    onBack()
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape    = RoundedCornerShape(26.dp),
-                colors   = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                contentPadding = PaddingValues()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(HeaderGradientMid, HeaderGradientEnd)
-                            ),
-                            shape = RoundedCornerShape(26.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Check, null, modifier = Modifier.size(18.dp), tint = Color.White)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.save_settings), fontWeight = FontWeight.SemiBold, color = Color.White)
-                    }
-                }
-            }
-            Spacer(Modifier.height(16.dp))
         }
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ── AUTO-SEND TOGGLE CARD
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Auto-send: WhatsApp ───────────────────────────────────────────────────────
 
 @Composable
-private fun AutoSendCard() {
+private fun AutoSendWhatsAppCard() {
     val context = LocalContext.current
     var enabled by remember { mutableStateOf(AutoSendPrefs.isAutoSendEnabled(context)) }
     var serviceActive by remember { mutableStateOf(AutoSendPrefs.isServiceEnabled(context)) }
 
-    // Re-check when returning from Accessibility Settings
-    DisposableEffect(Unit) {
-        onDispose { }
-    }
-    // Recheck service status on every recomposition (covers returning from settings)
-    LaunchedEffect(enabled) {
-        serviceActive = AutoSendPrefs.isServiceEnabled(context)
+    // The accessibility service is toggled outside our process, so the only
+    // reliable moment to re-read it is when we return to the foreground.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                serviceActive = AutoSendPrefs.isServiceEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    ElevatedCard(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(18.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-        colors    = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+    DsCard(spacing = 12.dp) {
+        ToggleRow(
+            title = stringResource(R.string.auto_send_whatsapp),
+            subtitle = stringResource(R.string.auto_send_whatsapp_sub),
+            checked = enabled,
+            onCheckedChange = { on ->
+                enabled = on
+                AutoSendPrefs.setAutoSendEnabled(context, on)
+                if (on && !AutoSendPrefs.isServiceEnabled(context)) {
+                    AutoSendPrefs.openAccessibilitySettings(context)
+                }
+            }
         )
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            // Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFF25D366).copy(alpha = 0.15f))
-                ) {
-                    Text("⚡", fontSize = 16.sp)
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        stringResource(R.string.auto_send_whatsapp),
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        stringResource(R.string.auto_send_subtitle),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-                Switch(
-                    checked = enabled,
-                    onCheckedChange = { on ->
-                        enabled = on
-                        AutoSendPrefs.setAutoSendEnabled(context, on)
-                        if (on && !AutoSendPrefs.isServiceEnabled(context)) {
-                            AutoSendPrefs.openAccessibilitySettings(context)
-                        }
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedTrackColor = Color(0xFF25D366)
-                    )
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        if (enabled) {
+            StatusNote(
+                text = stringResource(
+                    if (serviceActive) R.string.auto_send_service_active
+                    else R.string.auto_send_service_inactive
+                ),
+                ok = serviceActive,
+                onClick = { AutoSendPrefs.openAccessibilitySettings(context) }
             )
-            Spacer(Modifier.height(12.dp))
-
-            // Info text
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape    = RoundedCornerShape(12.dp),
-                color    = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ) {
-                Text(
-                    text     = stringResource(R.string.auto_send_info),
-                    modifier = Modifier.padding(12.dp),
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Service status indicator
-            if (enabled) {
-                Spacer(Modifier.height(12.dp))
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (!serviceActive) Modifier.clickable {
-                                AutoSendPrefs.openAccessibilitySettings(context)
-                                // Re-check on next recomposition
-                            } else Modifier
-                        ),
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (serviceActive) Color(0xFF25D366).copy(alpha = 0.1f)
-                            else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (serviceActive) Icons.Filled.Check else Icons.Filled.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = if (serviceActive) Color(0xFF25D366)
-                                   else MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text  = stringResource(
-                                if (serviceActive) R.string.auto_send_service_active
-                                else R.string.auto_send_service_inactive
-                            ),
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = if (serviceActive) Color(0xFF25D366)
-                                    else MaterialTheme.colorScheme.error
-                         )
-                    }
-                }
-            }
         }
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ── AUTO-SEND SMS TOGGLE CARD
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Auto-send: SMS ────────────────────────────────────────────────────────────
 
 @Composable
 private fun AutoSendSmsCard() {
@@ -555,146 +234,102 @@ private fun AutoSendSmsCard() {
     var enabled by remember { mutableStateOf(AutoSendPrefs.isSmsAutoSendEnabled(context)) }
     var hasPermission by remember {
         mutableStateOf(
-            androidx.core.content.ContextCompat.checkSelfPermission(
+            ContextCompat.checkSelfPermission(
                 context, Manifest.permission.SEND_SMS
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
+    val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         hasPermission = granted
-        if (granted) {
-            enabled = true
-            AutoSendPrefs.setSmsAutoSendEnabled(context, true)
-            Toast.makeText(context, "SMS permission granted ✓", Toast.LENGTH_SHORT).show()
-        } else {
-            enabled = false
-            AutoSendPrefs.setSmsAutoSendEnabled(context, false)
-            Toast.makeText(context, "SMS permission denied", Toast.LENGTH_SHORT).show()
+        enabled = granted
+        AutoSendPrefs.setSmsAutoSendEnabled(context, granted)
+    }
+
+    DsCard(spacing = 12.dp) {
+        ToggleRow(
+            title = stringResource(R.string.auto_send_sms),
+            subtitle = stringResource(R.string.auto_send_sms_sub),
+            checked = enabled,
+            onCheckedChange = { on ->
+                if (on && !hasPermission) {
+                    launcher.launch(Manifest.permission.SEND_SMS)
+                } else {
+                    enabled = on
+                    AutoSendPrefs.setSmsAutoSendEnabled(context, on)
+                }
+            }
+        )
+        if (enabled) {
+            StatusNote(
+                text = stringResource(
+                    if (hasPermission) R.string.auto_send_sms_permission_granted
+                    else R.string.auto_send_sms_permission_denied
+                ),
+                ok = hasPermission,
+                onClick = { launcher.launch(Manifest.permission.SEND_SMS) }
+            )
+        }
+    }
+}
+
+// ── Reminders ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun RemindersCard(settingsPrefs: SettingsPrefs) {
+    val context = LocalContext.current
+    var pendingAlerts by remember { mutableStateOf(settingsPrefs.pendingAlertsEnabled()) }
+    var dailySummary  by remember { mutableStateOf(settingsPrefs.dailySummaryEnabled()) }
+    var canPost       by remember { mutableStateOf(Notifications.canPost(context)) }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        canPost = granted
+        Reminders.sync(context)
+    }
+
+    fun askIfNeeded() {
+        if (!canPost && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
-    ElevatedCard(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(18.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-        colors    = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+    DsCard(spacing = 14.dp) {
+        Eyebrow(stringResource(R.string.section_reminders))
+
+        ToggleRow(
+            title = stringResource(R.string.reminder_pending_alerts),
+            subtitle = stringResource(R.string.reminder_pending_alerts_sub),
+            checked = pendingAlerts,
+            onCheckedChange = { on ->
+                pendingAlerts = on
+                settingsPrefs.setPendingAlertsEnabled(on)
+                if (on) askIfNeeded()
+                Reminders.sync(context)
+            }
         )
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            // Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                ) {
-                    Text("💬", fontSize = 16.sp)
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        stringResource(R.string.auto_send_sms),
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        stringResource(R.string.auto_send_sms_subtitle),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-                Switch(
-                    checked = enabled,
-                    onCheckedChange = { on ->
-                        if (on) {
-                            if (hasPermission) {
-                                enabled = true
-                                AutoSendPrefs.setSmsAutoSendEnabled(context, true)
-                            } else {
-                                // Request the permission first
-                                permissionLauncher.launch(Manifest.permission.SEND_SMS)
-                            }
-                        } else {
-                            enabled = false
-                            AutoSendPrefs.setSmsAutoSendEnabled(context, false)
-                        }
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedTrackColor = MaterialTheme.colorScheme.primary
-                    )
-                )
-            }
 
-            Spacer(Modifier.height(12.dp))
-            HorizontalDivider(
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        ToggleRow(
+            title = stringResource(R.string.reminder_daily_summary),
+            subtitle = stringResource(R.string.reminder_daily_summary_sub),
+            checked = dailySummary,
+            onCheckedChange = { on ->
+                dailySummary = on
+                settingsPrefs.setDailySummaryEnabled(on)
+                if (on) askIfNeeded()
+                Reminders.sync(context)
+            }
+        )
+
+        if ((pendingAlerts || dailySummary) && !canPost) {
+            StatusNote(
+                text = stringResource(R.string.notifications_blocked),
+                ok = false,
+                onClick = { askIfNeeded() }
             )
-            Spacer(Modifier.height(12.dp))
-
-            // Info text
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape    = RoundedCornerShape(12.dp),
-                color    = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ) {
-                Text(
-                    text     = stringResource(R.string.auto_send_sms_info),
-                    modifier = Modifier.padding(12.dp),
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Permission status indicator
-            if (enabled) {
-                Spacer(Modifier.height(12.dp))
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (!hasPermission) Modifier.clickable {
-                                permissionLauncher.launch(Manifest.permission.SEND_SMS)
-                            } else Modifier
-                        ),
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (hasPermission) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                            else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (hasPermission) Icons.Filled.Check else Icons.Filled.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = if (hasPermission) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text  = stringResource(
-                                if (hasPermission) R.string.auto_send_sms_permission_granted
-                                else R.string.auto_send_sms_permission_denied
-                            ),
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = if (hasPermission) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
         }
     }
 }

@@ -5,9 +5,24 @@
     <!-- Send SMS directly without opening the SMS app -->
     <uses-permission android:name="android.permission.SEND_SMS" />
 
-    <!-- Required for Android 11+ package visibility to detect WhatsApp -->
+    <!-- Reminder notifications (runtime-requested on API 33+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+      No CAMERA permission on purpose: prescription photos are captured by
+      delegating to the system camera app via ACTION_IMAGE_CAPTURE, which needs
+      no permission. Declaring CAMERA here would *create* a runtime prompt
+      rather than avoid one.
+    -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <queries>
+        <!-- Required for Android 11+ package visibility to detect WhatsApp -->
         <package android:name="com.whatsapp" />
+        <!-- Resolve a camera app for prescription capture -->
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
     </queries>
 
     <application
@@ -30,6 +45,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Hands camera apps a writable URI for the capture file -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <!-- WhatsApp auto-send accessibility service -->
         <service

@@ -6,11 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.niranjan.medqueue.data.local.AppDatabase
 import com.niranjan.medqueue.data.local.RequestEntity
 import com.niranjan.medqueue.data.local.RequestStatus
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.niranjan.medqueue.prescription.PrescriptionStore
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class RequestViewModel(application: Application) : AndroidViewModel(application) {
@@ -25,56 +24,76 @@ class RequestViewModel(application: Application) : AndroidViewModel(application)
             initialValue = emptyList()
         )
 
-    /** In-memory set of request IDs flagged as emergency (no DB column). */
-    private val _emergencyIds = MutableStateFlow<Set<Int>>(emptySet())
-    val emergencyIds: StateFlow<Set<Int>> = _emergencyIds
+    fun addRequest(
+        customerName: String,
+        phoneNumber: String,
+        medicineName: String,
+        isEmergency: Boolean = false,
+        prescriptionPath: String? = null
+    ) {
+        val phone = phoneNumber.filter(Char::isDigit)
+        if (phone.isEmpty()) return   // nothing to contact — don't store a dead row
 
-    fun addRequest(customerName: String, phoneNumber: String, medicineName: String, isEmergency: Boolean = false) {
         viewModelScope.launch {
-            val rowId = dao.insert(
+            dao.insert(
                 RequestEntity(
-                    customerName = customerName.trim(),
-                    phoneNumber  = phoneNumber.trim(),
-                    medicineName = medicineName.trim()
+                    customerName     = customerName.trim(),
+                    phoneNumber      = phone,
+                    medicineName     = medicineName.trim(),
+                    isEmergency      = isEmergency,
+                    prescriptionPath = prescriptionPath
                 )
             )
-            if (isEmergency) {
-                _emergencyIds.update { it + rowId.toInt() }
-            }
-        }
-    }
-
-    fun toggleEmergency(id: Int) {
-        _emergencyIds.update { ids ->
-            if (id in ids) ids - id else ids + id
         }
     }
 
     fun setEmergency(id: Int, isEmergency: Boolean) {
-        _emergencyIds.update { ids ->
-            if (isEmergency) ids + id else ids - id
-        }
+        viewModelScope.launch { dao.updateEmergency(id, isEmergency) }
     }
 
     fun markDelivered(id: Int) {
         viewModelScope.launch { dao.updateStatus(id, RequestStatus.DELIVERED) }
     }
 
-    /** Edit customer name, phone, medicine — status is preserved. */
-    fun updateRequest(id: Int, customerName: String, phoneNumber: String, medicineName: String) {
+    /**
+     * Edit customer name, phone, medicine, emergency flag and prescription.
+     * Status and createdAt are preserved.
+     */
+    fun updateRequest(
+        id: Int,
+        customerName: String,
+        phoneNumber: String,
+        medicineName: String,
+        isEmergency: Boolean,
+        prescriptionPath: String?
+    ) {
+        val phone = phoneNumber.filter(Char::isDigit)
+        if (phone.isEmpty()) return
+
         viewModelScope.launch {
+            val previousPath = dao.getById(id)?.prescriptionPath
+
             dao.updateFields(
                 id           = id,
                 customerName = customerName.trim(),
-                phoneNumber  = phoneNumber.trim(),
+                phoneNumber  = phone,
                 medicineName = medicineName.trim()
             )
+            dao.updateEmergency(id, isEmergency)
+            dao.updatePrescription(id, prescriptionPath)
+
+            // A replaced or cleared photo would otherwise sit on disk forever.
+            if (previousPath != null && previousPath != prescriptionPath) {
+                PrescriptionStore.delete(previousPath)
+            }
         }
     }
 
     fun deleteRequest(id: Int) {
-        viewModelScope.launch { dao.delete(id) }
-        _emergencyIds.update { it - id }
+        viewModelScope.launch {
+            val doomed = dao.getById(id)
+            dao.delete(id)
+            PrescriptionStore.delete(doomed?.prescriptionPath)
+        }
     }
 }
-

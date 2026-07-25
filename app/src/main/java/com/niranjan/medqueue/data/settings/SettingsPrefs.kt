@@ -28,6 +28,42 @@ class SettingsPrefs(context: Context) {
         private const val KEY_CONTACT1_PHONE  = "contact1Phone"
         private const val KEY_CONTACT2_NAME   = "contact2Name"
         private const val KEY_CONTACT2_PHONE  = "contact2Phone"
+
+        private const val KEY_ONBOARDED       = "hasOnboarded"
+        private const val KEY_PENDING_ALERTS  = "remindPendingAlerts"
+        private const val KEY_DAILY_SUMMARY   = "remindDailySummary"
+    }
+
+    // ── First-run state ──────────────────────────────────────────────────────
+
+    /**
+     * False until the shop-setup flow has been completed once.
+     *
+     * A saved shop name counts as proof of setup: installs that predate this
+     * flag already have their details filled in, and marching an existing shop
+     * back through onboarding on an app update would be worse than skipping it.
+     */
+    fun hasOnboarded(): Boolean =
+        prefs.getBoolean(KEY_ONBOARDED, false) ||
+                !prefs.getString(KEY_SHOP_NAME, "").isNullOrBlank()
+
+    fun setOnboarded(done: Boolean) {
+        prefs.edit { putBoolean(KEY_ONBOARDED, done) }
+    }
+
+    // ── Reminder toggles ─────────────────────────────────────────────────────
+    // Defaults follow the mockup: pending alerts on, daily summary off.
+
+    fun pendingAlertsEnabled(): Boolean = prefs.getBoolean(KEY_PENDING_ALERTS, true)
+
+    fun setPendingAlertsEnabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_PENDING_ALERTS, enabled) }
+    }
+
+    fun dailySummaryEnabled(): Boolean = prefs.getBoolean(KEY_DAILY_SUMMARY, false)
+
+    fun setDailySummaryEnabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_DAILY_SUMMARY, enabled) }
     }
 
     /** Persist all settings at once. */

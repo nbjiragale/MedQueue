@@ -1,343 +1,502 @@
 package com.niranjan.medqueue.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.niranjan.medqueue.data.local.RequestStatus
 import com.niranjan.medqueue.ui.theme.*
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ── SHARED UI COMPONENTS
+// Design-system primitives — "MedQueue Redesign.dc.html"
+//
+// The mockup is built from a small set of repeated shapes: a white header
+// strip, white cards on a paper background, teal eyebrow labels, filled input
+// chips, and pill badges. Each of those is one composable here.
 // ══════════════════════════════════════════════════════════════════════════════
 
-/**
- * Reusable gradient header that replaces TopAppBar on all screens.
- * Renders a full-width box with the dark forest-green vertical gradient,
- * an optional back-arrow in a translucent circle, title + subtitle,
- * and optional trailing action icons.
- */
+private val CardShape  = RoundedCornerShape(18.dp)
+private val FieldShape = RoundedCornerShape(12.dp)
+private val ButtonShape = RoundedCornerShape(14.dp)
+
+// ── Headers ───────────────────────────────────────────────────────────────────
+
+/** White header strip with a big title and a muted subtitle. */
 @Composable
-fun GradientHeader(
+fun ScreenHeader(
     title: String,
     subtitle: String? = null,
-    onBack: (() -> Unit)? = null,
-    actions: @Composable RowScope.() -> Unit = {}
+    topPadding: Dp = 20.dp
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(HeaderGradientStart, HeaderGradientMid, HeaderGradientEnd)
-                )
-            )
+            .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .padding(start = 20.dp, end = 20.dp, top = topPadding, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
+        Text(title, style = MaterialTheme.typography.titleLarge, color = Ink)
+        if (subtitle != null) {
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Muted)
+        }
+    }
+}
+
+/** Back-arrow header with a centred title and trailing text actions. */
+@Composable
+fun DetailHeader(
+    title: String,
+    onBack: () -> Unit,
+    backLabel: String,
+    actions: @Composable RowScope.() -> Unit = {}
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding()
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = backLabel,
+                tint = Ink,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 17.sp
+            ),
+            color = Ink,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 4.dp)
+        )
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Optional back arrow in translucent circle
-            if (onBack != null) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.15f))
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-            }
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            content = actions
+        )
+    }
+}
 
-            // Title + subtitle
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White
-                )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                }
-            }
+/** Trailing text action in a [DetailHeader]. */
+@Composable
+fun HeaderAction(label: String, tint: Color, onClick: () -> Unit) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+        color = tint,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 6.dp)
+    )
+}
 
-            // Trailing action icons
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                content = actions
+// ── Cards ─────────────────────────────────────────────────────────────────────
+
+/** The mockup's white card: radius 18, padding 18, barely-there shadow. */
+@Composable
+fun DsCard(
+    modifier: Modifier = Modifier,
+    padding: Dp = 18.dp,
+    spacing: Dp = 14.dp,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = CardShape,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(padding),
+            verticalArrangement = Arrangement.spacedBy(spacing),
+            content = content
+        )
+    }
+}
+
+/** Teal uppercase section label that opens every card. */
+@Composable
+fun Eyebrow(text: String, trailing: String? = null) {
+    Row(verticalAlignment = Alignment.Bottom) {
+        Text(text.uppercase(), style = SectionEyebrow, color = Teal)
+        if (trailing != null) {
+            Text(
+                "  $trailing",
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted
             )
         }
     }
 }
 
-/** Circle avatar with initials derived from a name, or a fallback letter. */
+// ── Inputs ────────────────────────────────────────────────────────────────────
+
+/**
+ * Label + filled input chip + optional error line, matching the mockup's form
+ * rows. The chip is borderless until it errors, when it picks up a red tint
+ * and a red outline.
+ */
 @Composable
-fun InitialsAvatar(
-    name: String,
-    size: Int = 44,
-    bgColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    textColor: Color = MaterialTheme.colorScheme.onPrimaryContainer
+fun DsField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String? = null,
+    required: Boolean = false,
+    optionalHint: String? = null,
+    prefix: String? = null,
+    error: String? = null,
+    singleLine: Boolean = true,
+    minLines: Int = 1,
+    keyboardType: KeyboardType = KeyboardType.Text
 ) {
-    val initials = name.trim()
-        .split(Regex("\\s+"))
-        .take(2)
-        .joinToString("") { it.firstOrNull()?.uppercaseChar()?.toString() ?: "" }
-        .ifBlank { "U" }
+    val hasError = !error.isNullOrBlank()
+
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // A blank label means the field stands alone under a card eyebrow,
+        // as the mockup's medicine box does — don't reserve a row for nothing.
+        if (label.isNotBlank()) {
+            Row {
+                Text(label, style = MaterialTheme.typography.labelMedium, color = Muted)
+                if (required) {
+                    Text(" *", style = MaterialTheme.typography.labelMedium, color = Red)
+                }
+                if (optionalHint != null) {
+                    Text(
+                        " $optionalHint",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Normal),
+                        color = Muted
+                    )
+                }
+            }
+        }
+
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (hasError) Modifier.border(1.5.dp, Red, FieldShape) else Modifier
+                ),
+            placeholder = placeholder?.let {
+                { Text(it, style = MaterialTheme.typography.bodyLarge, color = Placeholder) }
+            },
+            prefix = prefix?.let {
+                {
+                    Text(
+                        "$it  ",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        color = Ink
+                    )
+                }
+            },
+            textStyle = MaterialTheme.typography.bodyLarge,
+            singleLine = singleLine,
+            minLines = minLines,
+            isError = hasError,
+            shape = FieldShape,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor    = Paper,
+                unfocusedContainerColor  = Paper,
+                disabledContainerColor   = Paper,
+                errorContainerColor      = RedTint,
+                focusedIndicatorColor    = Color.Transparent,
+                unfocusedIndicatorColor  = Color.Transparent,
+                disabledIndicatorColor   = Color.Transparent,
+                errorIndicatorColor      = Color.Transparent,
+                focusedTextColor         = Ink,
+                unfocusedTextColor       = Ink,
+                cursorColor              = Teal
+            )
+        )
+
+        if (hasError) {
+            Text(
+                error!!,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = Red
+            )
+        }
+    }
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+
+/** Amber "Pending" / teal "Delivered" pill. */
+@Composable
+fun StatusPill(status: RequestStatus, pendingLabel: String, deliveredLabel: String) {
+    val pending = status == RequestStatus.PENDING
+    Pill(
+        text = if (pending) pendingLabel else deliveredLabel,
+        background = if (pending) AmberTint else TealTint,
+        foreground = if (pending) Amber else Teal
+    )
+}
+
+/** Red uppercase urgency pill. */
+@Composable
+fun UrgentPill(label: String) {
+    Pill(text = label.uppercase(), background = RedTint, foreground = Red)
+}
+
+@Composable
+private fun Pill(text: String, background: Color, foreground: Color) {
+    Surface(shape = RoundedCornerShape(9.dp), color = background) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = foreground,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+        )
+    }
+}
+
+/**
+ * Rounded teal tile carrying the last two digits of the phone number.
+ *
+ * The mockup uses this instead of name initials because a request's name is
+ * optional — the phone number is the only field guaranteed to be present.
+ */
+@Composable
+fun PhoneTile(phone: String, size: Dp = 40.dp, radius: Dp = 12.dp) {
+    val digits = phone.filter(Char::isDigit)
+    val label = if (digits.length >= 2) digits.takeLast(2) else digits.ifBlank { "—" }
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(size.dp)
-            .clip(CircleShape)
-            .background(bgColor)
+            .size(size)
+            .clip(RoundedCornerShape(radius))
+            .background(TealTint)
     ) {
         Text(
-            text = initials,
-            fontSize = (size * 0.38f).sp,
-            fontWeight = FontWeight.SemiBold,
-            color = textColor,
-            letterSpacing = 0.5.sp
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 13.sp),
+            color = Teal
         )
     }
 }
 
-/**
- * Section label with a coloured circle icon (matching the reference mockup).
- * [icon] is a Material ImageVector displayed inside a tinted circle.
- * [iconTint] is the circle background colour; the icon itself is white.
- */
+// ── Buttons ───────────────────────────────────────────────────────────────────
+
+/** Full-width teal call-to-action with the mockup's soft coloured shadow. */
 @Composable
-fun SectionLabel(
-    icon: ImageVector,
+fun PrimaryButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    loading: Boolean = false,
+    loadingText: String? = null
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled && !loading,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp),
+        shape = ButtonShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (loading) TealDark else Teal,
+            contentColor = Color.White,
+            disabledContainerColor = Teal.copy(alpha = 0.4f),
+            disabledContentColor = Color.White.copy(alpha = 0.8f)
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 2.dp)
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+                color = Color.White,
+                trackColor = Color.White.copy(alpha = 0.35f)
+            )
+            Spacer(Modifier.width(9.dp))
+        }
+        Text(
+            text = if (loading) (loadingText ?: text) else text,
+            style = MaterialTheme.typography.labelLarge
+        )
+    }
+}
+
+/** Quiet full-width text button used for "Cancel". */
+@Composable
+fun QuietButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        colors = ButtonDefaults.textButtonColors(contentColor = Muted)
+    ) {
+        Text(text, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+    }
+}
+
+/** One third of the detail screen's Call / WhatsApp / SMS row. */
+@Composable
+fun RowScope.ContactButton(
+    label: String,
+    icon: @Composable () -> Unit,
+    background: Color,
+    foreground: Color,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = Modifier
+            .weight(1f)
+            .clip(ButtonShape)
+            .background(background)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 8.dp)
+    ) {
+        CompositionLocalProvider(LocalContentColor provides foreground) { icon() }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
+            color = foreground
+        )
+    }
+}
+
+// ── Toggles ───────────────────────────────────────────────────────────────────
+
+/** Title + subtitle on the left, switch on the right. */
+@Composable
+fun ToggleRow(
     title: String,
-    subtitle: String? = null,
-    iconTint: Color = MaterialTheme.colorScheme.primary
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(iconTint.copy(alpha = 0.15f))
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+                style = MaterialTheme.typography.titleSmall.copy(fontSize = 14.sp),
+                color = Ink
             )
-            if (subtitle != null) {
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
+            Spacer(Modifier.height(3.dp))
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Muted)
         }
-    }
-}
-
-/** Legacy emoji-based section label kept for backward-compat. */
-@Composable
-fun SectionLabel(emoji: String, title: String, subtitle: String? = null) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
-        ) {
-            Text(emoji, fontSize = 16.sp)
-        }
-        Column {
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+        Spacer(Modifier.width(12.dp))
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Teal,
+                checkedBorderColor = Teal,
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = TrackOff,
+                uncheckedBorderColor = TrackOff
             )
-            if (subtitle != null) {
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-        }
-    }
-}
-
-/** Pill-shaped status badge with a coloured dot + text. */
-@Composable
-fun StatusBadge(status: RequestStatus) {
-    val isPending = status == RequestStatus.PENDING
-    val bgColor   = if (isPending) StatusPendingBg   else StatusDeliveredBg
-    val fgColor   = if (isPending) StatusPendingContent else StatusDeliveredContent
-    val label     = if (isPending) "Pending"         else "Delivered"
-
-    Surface(shape = RoundedCornerShape(50), color = bgColor) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(fgColor)
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.3.sp
-                ),
-                color = fgColor
-            )
-        }
-    }
-}
-
-/** Red pill-shaped "Emergency" badge. */
-@Composable
-fun EmergencyBadge() {
-    Surface(shape = RoundedCornerShape(50), color = StatusEmergencyBg) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(StatusEmergencyContent)
-            )
-            Text(
-                text = "Emergency",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.3.sp
-                ),
-                color = StatusEmergencyContent
-            )
-        }
-    }
-}
-
-/** Tappable emergency toggle chip for forms. */
-@Composable
-fun EmergencyToggleChip(isEmergency: Boolean, onToggle: () -> Unit) {
-    val redTint = Color(0xFFD32F2F)
-    Surface(
-        onClick = onToggle,
-        shape   = RoundedCornerShape(50),
-        color   = if (isEmergency) StatusEmergencyBg else Color.Transparent,
-        border  = if (isEmergency) null
-                  else BorderStroke(1.dp, redTint.copy(alpha = 0.5f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Warning,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = if (isEmergency) StatusEmergencyContent else redTint
-            )
-            Text(
-                text = if (isEmergency) "Emergency" else "Mark Emergency",
-                fontWeight = if (isEmergency) FontWeight.Bold else FontWeight.Medium,
-                fontSize = 13.sp,
-                color = if (isEmergency) StatusEmergencyContent else redTint
-            )
-            if (isEmergency) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = "Remove emergency",
-                    modifier = Modifier.size(14.dp),
-                    tint = StatusEmergencyContent.copy(alpha = 0.8f)
-                )
-            }
-        }
-    }
-}
-
-/** White elevated card wrapper for form sections. */
-@Composable
-fun FormCard(content: @Composable ColumnScope.() -> Unit) {
-    ElevatedCard(
-        modifier  = Modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-        colors    = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
         )
-    ) {
-        Column(modifier = Modifier.padding(20.dp), content = content)
     }
 }
 
-/** Small medicine name chip shown inside list cards. */
+/** Inline status strip under a toggle — teal when healthy, red when it needs a tap. */
 @Composable
-fun MedPill(text: String) {
+fun StatusNote(
+    text: String,
+    ok: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
     Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (onClick != null && !ok) Modifier.clickable(onClick = onClick) else Modifier),
+        shape = FieldShape,
+        color = if (ok) TealTint else RedTint
     ) {
         Text(
-            text     = text,
-            style    = MaterialTheme.typography.labelSmall,
-            color    = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (ok) Teal else Red,
+            modifier = Modifier.padding(12.dp)
         )
     }
+}
+
+// ── Misc ──────────────────────────────────────────────────────────────────────
+
+/** Centred empty state with a dashed circle, as used in the queue. */
+@Composable
+fun EmptyNote(text: String, hint: String? = null, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .border(1.5.dp, DashedLine, CircleShape)
+        ) {
+            Text("—", style = MaterialTheme.typography.bodyLarge, color = Muted)
+        }
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = Muted
+        )
+        if (hint != null) {
+            Text(hint, style = MaterialTheme.typography.bodySmall, color = Muted)
+        }
+    }
+}
+
+/** Single-line body text that ellipsises — used for the list's secondary line. */
+@Composable
+fun SecondaryLine(text: String, italic: Boolean = false) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium.let {
+            if (italic) it.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic) else it
+        },
+        color = Muted,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
 }
