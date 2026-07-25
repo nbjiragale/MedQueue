@@ -45,6 +45,8 @@
     <string name="action_camera">Camera</string>
     <string name="action_gallery">Gallery</string>
     <string name="action_remove_photo">Remove photo</string>
+    <string name="action_close">Close</string>
+    <string name="action_view_photo">View prescription full screen</string>
     <string name="mark_emergency">Mark as emergency</string>
     <string name="save_request">Save request</string>
     <string name="save_changes">Save changes</string>

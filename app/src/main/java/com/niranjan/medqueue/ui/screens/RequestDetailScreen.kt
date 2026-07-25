@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -61,6 +62,7 @@ fun RequestDetailScreen(
 ) {
     val context = LocalContext.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showPhotoViewer by remember { mutableStateOf(false) }
 
     val isPending = request.status == RequestStatus.PENDING
     val medicines = remember(request.medicineName) {
@@ -190,13 +192,14 @@ fun RequestDetailScreen(
                     if (hasPhoto) {
                         AsyncImage(
                             model = File(request.prescriptionPath!!),
-                            contentDescription = stringResource(R.string.section_prescription),
+                            contentDescription = stringResource(R.string.action_view_photo),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(170.dp)
                                 .clip(shape)
                                 .border(1.5.dp, Line, shape)
+                                .clickable { showPhotoViewer = true }
                         )
                     } else {
                         Box(
@@ -269,6 +272,15 @@ fun RequestDetailScreen(
                 showDeleteConfirm = false
                 onDelete()
             }
+        )
+    }
+
+    if (showPhotoViewer && request.prescriptionPath != null) {
+        ImageViewerDialog(
+            file = File(request.prescriptionPath),
+            contentDescription = stringResource(R.string.section_prescription),
+            closeLabel = stringResource(R.string.action_close),
+            onDismiss = { showPhotoViewer = false }
         )
     }
 }

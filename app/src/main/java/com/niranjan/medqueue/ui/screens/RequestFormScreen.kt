@@ -250,6 +250,7 @@ private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
     val shape = RoundedCornerShape(14.dp)
     // Keyed on the path so the stat() happens once per photo, not once per frame.
     val hasPhoto = remember(path) { PrescriptionStore.exists(path) }
+    var showViewer by remember { mutableStateOf(false) }
 
     if (path != null && hasPhoto) {
         Box(
@@ -261,9 +262,11 @@ private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
         ) {
             AsyncImage(
                 model = File(path),
-                contentDescription = stringResource(R.string.section_prescription),
+                contentDescription = stringResource(R.string.action_view_photo),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { showViewer = true }
             )
             Surface(
                 shape = RoundedCornerShape(10.dp),
@@ -280,6 +283,15 @@ private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
                     modifier = Modifier.padding(6.dp).size(14.dp)
                 )
             }
+        }
+
+        if (showViewer) {
+            ImageViewerDialog(
+                file = File(path),
+                contentDescription = stringResource(R.string.section_prescription),
+                closeLabel = stringResource(R.string.action_close),
+                onDismiss = { showViewer = false }
+            )
         }
     } else {
         Box(
