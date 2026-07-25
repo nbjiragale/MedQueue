@@ -245,6 +245,13 @@ fun RequestFormScreen(
 
 // ── Prescription slot ─────────────────────────────────────────────────────────
 
+/**
+ * Renders the attached photo, or nothing at all.
+ *
+ * There is deliberately no empty-state box: the Camera and Gallery buttons
+ * directly below already say what this section is for, so a dashed placeholder
+ * only added height to a form the worker is trying to get through quickly.
+ */
 @Composable
 private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
     val shape = RoundedCornerShape(14.dp)
@@ -291,22 +298,6 @@ private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
                 contentDescription = stringResource(R.string.section_prescription),
                 closeLabel = stringResource(R.string.action_close),
                 onDismiss = { showViewer = false }
-            )
-        }
-    } else {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(92.dp)
-                .clip(shape)
-                .background(Paper)
-                .border(1.5.dp, DashedLine, shape)
-        ) {
-            Text(
-                stringResource(R.string.prescription_empty),
-                style = MaterialTheme.typography.bodySmall,
-                color = Muted
             )
         }
     }
