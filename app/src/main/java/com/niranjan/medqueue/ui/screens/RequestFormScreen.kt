@@ -245,11 +245,19 @@ fun RequestFormScreen(
 
 // ── Prescription slot ─────────────────────────────────────────────────────────
 
+/**
+ * Renders the attached photo, or nothing at all.
+ *
+ * There is deliberately no empty-state box: the Camera and Gallery buttons
+ * directly below already say what this section is for, so a dashed placeholder
+ * only added height to a form the worker is trying to get through quickly.
+ */
 @Composable
 private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
     val shape = RoundedCornerShape(14.dp)
     // Keyed on the path so the stat() happens once per photo, not once per frame.
     val hasPhoto = remember(path) { PrescriptionStore.exists(path) }
+    var showViewer by remember { mutableStateOf(false) }
 
     if (path != null && hasPhoto) {
         Box(
@@ -261,9 +269,11 @@ private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
         ) {
             AsyncImage(
                 model = File(path),
-                contentDescription = stringResource(R.string.section_prescription),
+                contentDescription = stringResource(R.string.action_view_photo),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { showViewer = true }
             )
             Surface(
                 shape = RoundedCornerShape(10.dp),
@@ -281,20 +291,13 @@ private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
                 )
             }
         }
-    } else {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(92.dp)
-                .clip(shape)
-                .background(Paper)
-                .border(1.5.dp, DashedLine, shape)
-        ) {
-            Text(
-                stringResource(R.string.prescription_empty),
-                style = MaterialTheme.typography.bodySmall,
-                color = Muted
+
+        if (showViewer) {
+            ImageViewerDialog(
+                file = File(path),
+                contentDescription = stringResource(R.string.section_prescription),
+                closeLabel = stringResource(R.string.action_close),
+                onDismiss = { showViewer = false }
             )
         }
     }

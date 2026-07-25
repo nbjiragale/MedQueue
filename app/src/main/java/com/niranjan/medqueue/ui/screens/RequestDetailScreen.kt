@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.niranjan.medqueue.ui.screens
 
 import android.Manifest
@@ -7,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -59,6 +62,7 @@ fun RequestDetailScreen(
 ) {
     val context = LocalContext.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showPhotoViewer by remember { mutableStateOf(false) }
 
     val isPending = request.status == RequestStatus.PENDING
     val medicines = remember(request.medicineName) {
@@ -107,21 +111,34 @@ fun RequestDetailScreen(
             ) {
                 // ── Hero ────────────────────────────────────────────────────
                 DsCard(spacing = 0.dp) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
                         PhoneTile(request.phoneNumber, size = 46.dp, radius = 13.dp)
 
                         Column(modifier = Modifier.weight(1f)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            // Number and badge share a line when they fit and
+                            // the badge drops to its own line when they don't,
+                            // mirroring the mockup's flex-wrap. A plain Row
+                            // would hand the number all the width and crush
+                            // the badge to a single-character column.
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
                                     text = formatForDisplay(request.phoneNumber),
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Ink
+                                    color = Ink,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.align(Alignment.CenterVertically)
                                 )
                                 if (request.isEmergency) {
-                                    UrgentPill(stringResource(R.string.badge_emergency))
+                                    Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                                        UrgentPill(stringResource(R.string.badge_emergency))
+                                    }
                                 }
                             }
                             Spacer(Modifier.height(3.dp))
@@ -175,13 +192,14 @@ fun RequestDetailScreen(
                     if (hasPhoto) {
                         AsyncImage(
                             model = File(request.prescriptionPath!!),
-                            contentDescription = stringResource(R.string.section_prescription),
+                            contentDescription = stringResource(R.string.action_view_photo),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(170.dp)
                                 .clip(shape)
                                 .border(1.5.dp, Line, shape)
+                                .clickable { showPhotoViewer = true }
                         )
                     } else {
                         Box(
@@ -254,6 +272,15 @@ fun RequestDetailScreen(
                 showDeleteConfirm = false
                 onDelete()
             }
+        )
+    }
+
+    if (showPhotoViewer && request.prescriptionPath != null) {
+        ImageViewerDialog(
+            file = File(request.prescriptionPath),
+            contentDescription = stringResource(R.string.section_prescription),
+            closeLabel = stringResource(R.string.action_close),
+            onDismiss = { showPhotoViewer = false }
         )
     }
 }
