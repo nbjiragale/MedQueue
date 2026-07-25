@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.niranjan.medqueue.ui.screens
 
 import android.Manifest
@@ -107,21 +109,34 @@ fun RequestDetailScreen(
             ) {
                 // ── Hero ────────────────────────────────────────────────────
                 DsCard(spacing = 0.dp) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
                         PhoneTile(request.phoneNumber, size = 46.dp, radius = 13.dp)
 
                         Column(modifier = Modifier.weight(1f)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            // Number and badge share a line when they fit and
+                            // the badge drops to its own line when they don't,
+                            // mirroring the mockup's flex-wrap. A plain Row
+                            // would hand the number all the width and crush
+                            // the badge to a single-character column.
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Text(
                                     text = formatForDisplay(request.phoneNumber),
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Ink
+                                    color = Ink,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    modifier = Modifier.align(Alignment.CenterVertically)
                                 )
                                 if (request.isEmergency) {
-                                    UrgentPill(stringResource(R.string.badge_emergency))
+                                    Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                                        UrgentPill(stringResource(R.string.badge_emergency))
+                                    }
                                 }
                             }
                             Spacer(Modifier.height(3.dp))

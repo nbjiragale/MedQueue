@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.niranjan.medqueue.ui.screens
 
 import androidx.compose.foundation.background
@@ -268,19 +270,25 @@ private fun RequestRow(request: RequestEntity, onClick: () -> Unit) {
                 PhoneTile(request.phoneNumber)
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    // Same wrap rule as the detail hero: never squeeze the
+                    // badge, never break the number.
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
                             text = formatForDisplay(request.phoneNumber),
                             style = MaterialTheme.typography.titleSmall,
                             color = Ink,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.align(Alignment.CenterVertically)
                         )
                         if (request.isEmergency) {
-                            UrgentPill(stringResource(R.string.badge_urgent))
+                            Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                                UrgentPill(stringResource(R.string.badge_urgent))
+                            }
                         }
                     }
                     Spacer(Modifier.height(3.dp))

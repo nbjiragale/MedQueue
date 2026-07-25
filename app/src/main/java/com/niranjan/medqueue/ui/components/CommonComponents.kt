@@ -277,6 +277,10 @@ private fun Pill(text: String, background: Color, foreground: Color) {
             text = text,
             style = MaterialTheme.typography.labelSmall,
             color = foreground,
+            // A pill must never wrap. Squeezed into a narrow slot it would
+            // otherwise break one letter per line and stretch its whole row.
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
         )
     }
