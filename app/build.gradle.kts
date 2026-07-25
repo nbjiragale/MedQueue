@@ -57,6 +57,12 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    // Prescription photo rendering
+    implementation(libs.coil.compose)
+
+    // Reminder notifications
+    implementation(libs.androidx.work.runtime.ktx)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

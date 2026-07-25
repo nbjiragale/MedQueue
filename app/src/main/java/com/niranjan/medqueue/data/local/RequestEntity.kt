@@ -34,6 +34,12 @@ data class RequestEntity(
     val medicineName: String,
     val status: RequestStatus = RequestStatus.PENDING,
     val createdAt: Long = System.currentTimeMillis(),
-    val isEmergency: Boolean = false
+    val isEmergency: Boolean = false,
+    /**
+     * Absolute path to the prescription photo in internal storage, or null.
+     * Stored as a path rather than a content URI because the source URI (camera
+     * capture, photo picker) is only valid for the lifetime of the grant.
+     */
+    val prescriptionPath: String? = null
 )
 

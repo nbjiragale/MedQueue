@@ -11,6 +11,7 @@ import androidx.compose.runtime.saveable.listSaver
  */
 sealed class Screen {
     object Splash      : Screen()
+    object Onboarding  : Screen()
     object Home        : Screen()
     object RequestList : Screen()
     object Settings    : Screen()
@@ -28,6 +29,7 @@ val ScreenSaver = listSaver<Screen, Any>(
     save = { screen ->
         when (screen) {
             Screen.Splash           -> listOf(KEY_SPLASH)
+            Screen.Onboarding       -> listOf(KEY_ONBOARDING)
             Screen.Home             -> listOf(KEY_HOME)
             Screen.RequestList      -> listOf(KEY_LIST)
             Screen.Settings         -> listOf(KEY_SETTINGS)
@@ -37,22 +39,29 @@ val ScreenSaver = listSaver<Screen, Any>(
     },
     restore = { saved ->
         when (saved.firstOrNull()) {
-            KEY_HOME     -> Screen.Home
-            KEY_SETTINGS -> Screen.Settings
-            KEY_DETAIL   -> Screen.RequestDetail(saved[1] as Int)
-            KEY_EDIT     -> Screen.EditRequest(saved[1] as Int)
-            else         -> Screen.RequestList
+            // Onboarding does restore: dropping a half-finished setup back to
+            // the queue would strand a shop with no name on its messages.
+            KEY_ONBOARDING -> Screen.Onboarding
+            KEY_HOME       -> Screen.Home
+            KEY_SETTINGS   -> Screen.Settings
+            KEY_DETAIL     -> Screen.RequestDetail(saved[1] as Int)
+            KEY_EDIT       -> Screen.EditRequest(saved[1] as Int)
+            else           -> Screen.RequestList
         }
     }
 )
 
-private const val KEY_SPLASH   = "splash"
-private const val KEY_HOME     = "home"
-private const val KEY_LIST     = "list"
-private const val KEY_SETTINGS = "settings"
-private const val KEY_DETAIL   = "detail"
-private const val KEY_EDIT     = "edit"
+private const val KEY_SPLASH     = "splash"
+private const val KEY_ONBOARDING = "onboarding"
+private const val KEY_HOME       = "home"
+private const val KEY_LIST       = "list"
+private const val KEY_SETTINGS   = "settings"
+private const val KEY_DETAIL     = "detail"
+private const val KEY_EDIT       = "edit"
 
-enum class FilterTag(val label: String) {
-    ALL("All"), TODAY("Today"), PENDING("Pending"), DELIVERED("Delivered")
-}
+/**
+ * Queue filter chips. The redesign drops the old "Today" chip — today's count
+ * moved into the header subtitle, where it reads as context rather than as
+ * another thing to tap.
+ */
+enum class FilterTag { ALL, PENDING, DELIVERED }

@@ -61,3 +61,20 @@ fun toDialString(raw: String): String {
 /** True when there are enough digits to be worth handing to another app. */
 fun isDialable(raw: String): Boolean =
     raw.count(Char::isDigit) >= LOCAL_LENGTH
+
+/**
+ * Human-readable form for the UI — "+91 98765 43210".
+ *
+ * Grouping matters here because the redesign promotes the phone number to the
+ * primary line of every list row, where an unbroken 10-digit run is hard to
+ * scan. Anything that isn't a recognisable Indian number is returned as typed.
+ */
+fun formatForDisplay(raw: String): String {
+    val normalized = normalizeIndianPhone(raw)
+    val isCountryCoded = normalized.length == LOCAL_LENGTH + INDIA_CC.length &&
+            normalized.startsWith(INDIA_CC)
+    if (!isCountryCoded) return raw
+
+    val local = normalized.drop(INDIA_CC.length)
+    return "+$INDIA_CC ${local.take(5)} ${local.drop(5)}"
+}

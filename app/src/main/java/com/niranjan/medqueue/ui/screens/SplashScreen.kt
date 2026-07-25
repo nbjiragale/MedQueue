@@ -2,8 +2,10 @@ package com.niranjan.medqueue.ui.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -12,192 +14,117 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.niranjan.medqueue.ui.theme.HeaderGradientEnd
-import com.niranjan.medqueue.ui.theme.HeaderGradientMid
-import com.niranjan.medqueue.ui.theme.HeaderGradientStart
+import com.niranjan.medqueue.R
+import com.niranjan.medqueue.ui.theme.TealDark
 import kotlinx.coroutines.delay
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ── SPLASH SCREEN
+// SPLASH — flat teal-dark field, rounded-square mark, three-dot loader
 // ══════════════════════════════════════════════════════════════════════════════
 
 @Composable
 fun SplashScreen(onFinished: () -> Unit) {
 
-    // ── Animation triggers ───────────────────────────────────────────────
-    var startAnimation by remember { mutableStateOf(false) }
+    var start by remember { mutableStateOf(false) }
 
-    // Logo: scale up with overshoot
-    val logoScale by animateFloatAsState(
-        targetValue   = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
-        label         = "logoScale"
+    val markScale by animateFloatAsState(
+        targetValue = if (start) 1f else 0.7f,
+        animationSpec = tween(500, easing = FastOutSlowInEasing),
+        label = "markScale"
     )
-
-    // Logo: fade in
-    val logoAlpha by animateFloatAsState(
-        targetValue   = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 600),
-        label         = "logoAlpha"
+    val markAlpha by animateFloatAsState(
+        targetValue = if (start) 1f else 0f,
+        animationSpec = tween(400),
+        label = "markAlpha"
     )
-
-    // App name: slide up + fade in (delayed)
     val textAlpha by animateFloatAsState(
-        targetValue   = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 500, delayMillis = 350),
-        label         = "textAlpha"
-    )
-    val textOffset by animateFloatAsState(
-        targetValue   = if (startAnimation) 0f else 30f,
-        animationSpec = tween(durationMillis = 500, delayMillis = 350, easing = FastOutSlowInEasing),
-        label         = "textOffset"
+        targetValue = if (start) 1f else 0f,
+        animationSpec = tween(400, delayMillis = 220),
+        label = "textAlpha"
     )
 
-    // Subtitle: fade in (more delayed)
-    val subtitleAlpha by animateFloatAsState(
-        targetValue   = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 500, delayMillis = 600),
-        label         = "subtitleAlpha"
+    // Three dots cycling at even offsets, matching the mockup's loader.
+    val cycle = rememberInfiniteTransition(label = "dots")
+    val phase by cycle.animateFloat(
+        initialValue = 0f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(tween(1050, easing = LinearEasing)),
+        label = "dotPhase"
     )
 
-    // Pill loader dots — infinite bouncing
-    val infiniteTransition = rememberInfiniteTransition(label = "dots")
-    val dot1 by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes { durationMillis = 800; 1f at 200; 0f at 400 },
-            repeatMode = RepeatMode.Restart
-        ), label = "dot1"
-    )
-    val dot2 by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes { durationMillis = 800; 1f at 400; 0f at 600 },
-            repeatMode = RepeatMode.Restart
-        ), label = "dot2"
-    )
-    val dot3 by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes { durationMillis = 800; 1f at 600; 0f at 800 },
-            repeatMode = RepeatMode.Restart
-        ), label = "dot3"
-    )
-
-    // Start animation on first composition, navigate away after delay
     LaunchedEffect(Unit) {
-        startAnimation = true
-        delay(1200)  // total splash duration
+        start = true
+        delay(1200)
         onFinished()
     }
 
-    // ── UI ────────────────────────────────────────────────────────────────
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(HeaderGradientStart, HeaderGradientMid, HeaderGradientEnd)
-                )
-            ),
+            .background(TealDark),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // ── Animated "M" logo ────────────────────────────────────────
+            // Rounded-square tile holding an outlined square mark
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .scale(logoScale)
-                    .alpha(logoAlpha)
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.15f))
+                    .scale(markScale)
+                    .alpha(markAlpha)
+                    .size(72.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Color.White.copy(alpha = 0.14f))
             ) {
                 Box(
-                    contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(72.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.25f))
-                ) {
-                    Text(
-                        text       = "M",
-                        fontSize   = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = Color.White
-                    )
-                }
+                        .size(30.dp)
+                        .border(3.dp, Color.White, RoundedCornerShape(8.dp))
+                )
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
 
-            // ── App name ─────────────────────────────────────────────────
             Text(
-                text  = "MedQueue",
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight    = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                ),
-                color    = Color.White,
-                modifier = Modifier
-                    .alpha(textAlpha)
-                    .offset { androidx.compose.ui.unit.IntOffset(0, textOffset.dp.roundToPx()) }
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.headlineLarge,
+                color = Color.White,
+                modifier = Modifier.alpha(textAlpha)
             )
 
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
 
-            // ── Subtitle ─────────────────────────────────────────────────
             Text(
-                text  = "Medicine requests, simplified",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight    = FontWeight.Medium,
-                    letterSpacing = 0.5.sp
-                ),
-                color    = Color.White.copy(alpha = 0.7f),
-                modifier = Modifier.alpha(subtitleAlpha)
+                text = stringResource(R.string.app_tagline),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.65f),
+                modifier = Modifier.alpha(textAlpha)
             )
 
-            Spacer(Modifier.height(48.dp))
+            Spacer(Modifier.height(28.dp))
 
-            // ── Loading dots ─────────────────────────────────────────────
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment     = Alignment.CenterVertically,
-                modifier              = Modifier.alpha(subtitleAlpha)
+                modifier = Modifier.alpha(textAlpha)
             ) {
-                listOf(dot1, dot2, dot3).forEach { anim ->
+                repeat(3) { index ->
+                    // Distance from the travelling phase to this dot's slot,
+                    // wrapped so dot 0 lights up again after dot 2.
+                    val distance = ((phase - index + 3f) % 3f).let { minOf(it, 3f - it) }
+                    val intensity = (1f - distance).coerceIn(0f, 1f)
                     Box(
                         modifier = Modifier
-                            .size(10.dp)
-                            .scale(0.6f + 0.4f * anim)
-                            .alpha(0.4f + 0.6f * anim)
+                            .size(7.dp)
                             .clip(CircleShape)
-                            .background(Color.White)
+                            .background(Color.White.copy(alpha = 0.2f + 0.8f * intensity))
                     )
                 }
             }
         }
-
-        // ── Bottom tagline ───────────────────────────────────────────────
-        Text(
-            text     = "💊  Your pharmacy assistant",
-            style    = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
-            color    = Color.White.copy(alpha = 0.4f),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 36.dp)
-                .alpha(subtitleAlpha)
-        )
     }
 }
-
-
-

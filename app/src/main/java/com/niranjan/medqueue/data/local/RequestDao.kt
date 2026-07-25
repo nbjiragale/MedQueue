@@ -29,6 +29,22 @@ interface RequestDao {
     @Query("UPDATE requests SET isEmergency = :isEmergency WHERE id = :id")
     suspend fun updateEmergency(id: Int, isEmergency: Boolean)
 
+    @Query("UPDATE requests SET prescriptionPath = :path WHERE id = :id")
+    suspend fun updatePrescription(id: Int, path: String?)
+
+    @Query("SELECT * FROM requests WHERE id = :id")
+    suspend fun getById(id: Int): RequestEntity?
+
+    // ── Reminder queries ────────────────────────────────────────────────────
+
+    /** Pending requests older than [cutoff], oldest first — drives the 24h alert. */
+    @Query("SELECT * FROM requests WHERE status = :status AND createdAt < :cutoff ORDER BY createdAt ASC")
+    suspend fun getStale(status: RequestStatus = RequestStatus.PENDING, cutoff: Long): List<RequestEntity>
+
+    /** Count of outstanding requests — drives the daily summary. */
+    @Query("SELECT COUNT(*) FROM requests WHERE status = :status")
+    suspend fun countByStatus(status: RequestStatus = RequestStatus.PENDING): Int
+
     @Query("DELETE FROM requests WHERE id = :id")
     suspend fun delete(id: Int)
 }
