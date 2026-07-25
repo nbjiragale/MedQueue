@@ -17,8 +17,10 @@ class RequestConverters {
     @TypeConverter
     fun fromStatus(status: RequestStatus): String = status.name
 
+    /** Falls back to PENDING rather than throwing if the stored value is unrecognised. */
     @TypeConverter
-    fun toStatus(value: String): RequestStatus = RequestStatus.valueOf(value)
+    fun toStatus(value: String): RequestStatus =
+        RequestStatus.entries.firstOrNull { it.name == value } ?: RequestStatus.PENDING
 }
 
 // ── Entity ───────────────────────────────────────────────────────────────────
@@ -31,6 +33,7 @@ data class RequestEntity(
     val phoneNumber: String,
     val medicineName: String,
     val status: RequestStatus = RequestStatus.PENDING,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isEmergency: Boolean = false
 )
 

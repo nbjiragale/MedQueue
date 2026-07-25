@@ -1,7 +1,6 @@
 package com.niranjan.medqueue.ui.screens
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -82,8 +81,8 @@ fun RequestDetailScreen(
             val message = buildMessage(settingsPrefs.read(), ContactAction.SMS)
             val result  = launchContactAction(context, ContactAction.SMS, request.phoneNumber, message)
             val toast   = when (result) {
-                ContactActionResult.AutoSent -> "SMS sent ✓"
-                else                         -> "SMS failed — try again"
+                is ContactActionResult.AutoSent -> smsSentMessage(result.parts)
+                else                            -> "SMS failed — try again"
             }
             Toast.makeText(context, toast, Toast.LENGTH_SHORT).show()
         } else {
@@ -284,16 +283,18 @@ fun RequestDetailScreen(
                 val result  = launchContactAction(context, action, request.phoneNumber, message)
                 when (result) {
                     ContactActionResult.Success              -> { /* opened app */ }
-                    ContactActionResult.AutoSent             ->
-                        Toast.makeText(context, "SMS sent ✓", Toast.LENGTH_SHORT).show()
+                    is ContactActionResult.AutoSent          ->
+                        Toast.makeText(context, smsSentMessage(result.parts), Toast.LENGTH_SHORT).show()
                     ContactActionResult.InvalidPhone         ->
                         Toast.makeText(context, "Invalid phone number", Toast.LENGTH_SHORT).show()
                     ContactActionResult.WhatsAppNotInstalled ->
                         Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
                     ContactActionResult.NoHandler            ->
                         Toast.makeText(context, "No app found to handle this action", Toast.LENGTH_SHORT).show()
+                    ContactActionResult.SendFailed           ->
+                        Toast.makeText(context, "Could not send — try again", Toast.LENGTH_SHORT).show()
                     ContactActionResult.SmsPermissionNeeded  ->
-                        smsPermissionLauncher.launch(android.Manifest.permission.SEND_SMS)
+                        smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
                 }
             }
         )
@@ -394,6 +395,13 @@ fun RequestDetailScreen(
         }
     }
 }
+
+/**
+ * A background SMS is billed per part, and the bilingual template runs to
+ * seven of them, so report the count rather than a silent "sent".
+ */
+private fun smsSentMessage(parts: Int): String =
+    if (parts > 1) "SMS sent ✓ ($parts messages)" else "SMS sent ✓"
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ── CONTACT ACTION SHEET

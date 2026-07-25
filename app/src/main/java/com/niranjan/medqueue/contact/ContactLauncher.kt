@@ -1,10 +1,14 @@
 package com.niranjan.medqueue.contact
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.telephony.SmsManager
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.niranjan.medqueue.autosend.AutoSendPrefs
 import com.niranjan.medqueue.data.settings.AppSettings
@@ -17,11 +21,13 @@ enum class ContactAction { WHATSAPP, SMS, CALL }
 
 sealed class ContactActionResult {
     object Success              : ContactActionResult()
-    object AutoSent             : ContactActionResult()
+    /** Sent silently in the background. [parts] is what the carrier bills. */
+    data class AutoSent(val parts: Int) : ContactActionResult()
     object InvalidPhone         : ContactActionResult()
     object WhatsAppNotInstalled : ContactActionResult()
     object NoHandler            : ContactActionResult()
     object SmsPermissionNeeded  : ContactActionResult()
+    object SendFailed           : ContactActionResult()
 }
 
 // ── Message builders ──────────────────────────────────────────────────────────
@@ -92,7 +98,7 @@ fun launchContactAction(
     phone: String,
     message: String
 ): ContactActionResult {
-    if (phone.isBlank()) return ContactActionResult.InvalidPhone
+    if (!isDialable(phone)) return ContactActionResult.InvalidPhone
 
     return when (action) {
         ContactAction.WHATSAPP -> launchWhatsApp(context, phone, message)
@@ -101,50 +107,34 @@ fun launchContactAction(
     }
 }
 
-// ── Phone normalisation ───────────────────────────────────────────────────────
-
-/**
- * Strips non-digit characters and ensures the phone number includes
- * the Indian country code (91) exactly once.
- *
- * Examples:
- *   "9876543210"      → "919876543210"
- *   "+91 98765 43210" → "919876543210"
- *   "09876543210"     → "919876543210"
- *   "919876543210"    → "919876543210"
- */
-private fun normalizeIndianPhone(raw: String): String {
-    val digits = raw.replace(Regex("[^\\d]"), "")
-    return when {
-        digits.length >= 12 && digits.startsWith("91") -> digits                // already has 91
-        digits.length == 11 && digits.startsWith("0")  -> "91${digits.drop(1)}" // leading 0
-        digits.length == 10                             -> "91$digits"           // local number
-        else                                            -> digits                // fallback as-is
-    }
-}
-
 // ── Intent helpers ────────────────────────────────────────────────────────────
 
+private const val TAG = "ContactLauncher"
+
 private fun launchWhatsApp(context: Context, phone: String, message: String): ContactActionResult {
+    // WhatsApp's URL wants bare digits with the country code, no "+".
     val normalizedPhone = normalizeIndianPhone(phone)
+    val encoded = URLEncoder.encode(message, StandardCharsets.UTF_8.toString())
+
+    // api.whatsapp.com/send resolves directly inside WhatsApp —
+    // wa.me adds an extra HTTP redirect that slows things down.
+    val intent = Intent(
+        Intent.ACTION_VIEW,
+        "https://api.whatsapp.com/send?phone=$normalizedPhone&text=$encoded".toUri()
+    ).setPackage("com.whatsapp")
+
     return try {
-        val encoded = URLEncoder.encode(message, StandardCharsets.UTF_8.toString())
-
-        // If auto-send is on, tell the accessibility service to tap Send
-        if (AutoSendPrefs.isAutoSendEnabled(context) && AutoSendPrefs.isServiceEnabled(context)) {
-            AutoSendPrefs.setAutoSendPending(context, true)
-        }
-
-        // api.whatsapp.com/send resolves directly inside WhatsApp —
-        // wa.me adds an extra HTTP redirect that slows things down.
-        val intent = Intent(
-            Intent.ACTION_VIEW,
-            "https://api.whatsapp.com/send?phone=$normalizedPhone&text=$encoded".toUri()
-        ).setPackage("com.whatsapp")
         context.startActivity(intent)
+        // Arm the accessibility service only once WhatsApp is genuinely on its
+        // way to the foreground. Arming beforehand meant a failed launch could
+        // leave the flag set, and the service would then fire on whatever
+        // conversation the user opened next.
+        if (AutoSendPrefs.isAutoSendEnabled(context) && AutoSendPrefs.isServiceEnabled(context)) {
+            AutoSendPrefs.armAutoSend(context)
+        }
         ContactActionResult.Success
     } catch (e: ActivityNotFoundException) {
-        AutoSendPrefs.clearAutoSendPending(context)
+        Log.w(TAG, "WhatsApp not installed", e)
         ContactActionResult.WhatsAppNotInstalled
     }
 }
@@ -157,44 +147,61 @@ private fun launchSms(context: Context, phone: String, message: String): Contact
 
     // Otherwise open the SMS app with prefilled message (original behavior)
     return try {
-        val intent = Intent(Intent.ACTION_VIEW, "sms:$phone".toUri())
+        val intent = Intent(Intent.ACTION_VIEW, "sms:${toDialString(phone)}".toUri())
             .putExtra("sms_body", message)
         context.startActivity(intent)
         ContactActionResult.Success
     } catch (e: ActivityNotFoundException) {
+        Log.w(TAG, "No SMS app installed", e)
         ContactActionResult.NoHandler
     }
 }
 
 /**
  * Sends an SMS directly in the background using [SmsManager].
- * Handles multi-part messages automatically (the template is > 160 chars).
+ *
+ * The availability template is bilingual, so it always encodes as UCS-2 and
+ * currently splits into 7 billable parts — see [estimateSmsParts]. The count
+ * is returned so the caller can tell the worker what the tap actually cost.
  */
 private fun sendSmsDirect(context: Context, phone: String, message: String): ContactActionResult {
+    // Check the permission explicitly. Relying on the SecurityException alone
+    // is unreliable: several OEM ROMs drop the message silently instead.
+    val granted = ContextCompat.checkSelfPermission(
+        context, Manifest.permission.SEND_SMS
+    ) == PackageManager.PERMISSION_GRANTED
+    if (!granted) return ContactActionResult.SmsPermissionNeeded
+
     return try {
-        @Suppress("DEPRECATION")
-        val smsManager = SmsManager.getDefault()
+        val smsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            context.getSystemService(SmsManager::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            SmsManager.getDefault()
+        } ?: return ContactActionResult.SendFailed
+
+        val destination = toDialString(phone)
         val parts = smsManager.divideMessage(message)
-        smsManager.sendMultipartTextMessage(phone, null, parts, null, null)
-        Log.d("ContactLauncher", "SMS auto-sent to $phone (${parts.size} part(s))")
-        ContactActionResult.AutoSent
+        smsManager.sendMultipartTextMessage(destination, null, parts, null, null)
+        Log.d(TAG, "SMS auto-sent (${parts.size} part(s), estimated ${estimateSmsParts(message)})")
+        ContactActionResult.AutoSent(parts.size)
     } catch (e: SecurityException) {
-        // Permission not granted
-        Log.w("ContactLauncher", "SEND_SMS permission not granted", e)
+        Log.w(TAG, "SEND_SMS permission not granted", e)
         ContactActionResult.SmsPermissionNeeded
     } catch (e: Exception) {
-        Log.e("ContactLauncher", "Failed to send SMS directly", e)
-        ContactActionResult.NoHandler
+        Log.e(TAG, "Failed to send SMS directly", e)
+        ContactActionResult.SendFailed
     }
 }
 
 private fun launchCall(context: Context, phone: String): ContactActionResult {
     return try {
         // ACTION_DIAL only — no CALL permission required
-        val intent = Intent(Intent.ACTION_DIAL, "tel:$phone".toUri())
+        val intent = Intent(Intent.ACTION_DIAL, "tel:${toDialString(phone)}".toUri())
         context.startActivity(intent)
         ContactActionResult.Success
     } catch (e: ActivityNotFoundException) {
+        Log.w(TAG, "No dialler available", e)
         ContactActionResult.NoHandler
     }
 }

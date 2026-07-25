@@ -23,6 +23,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -419,13 +422,19 @@ private fun AutoSendCard() {
     var enabled by remember { mutableStateOf(AutoSendPrefs.isAutoSendEnabled(context)) }
     var serviceActive by remember { mutableStateOf(AutoSendPrefs.isServiceEnabled(context)) }
 
-    // Re-check when returning from Accessibility Settings
-    DisposableEffect(Unit) {
-        onDispose { }
-    }
-    // Recheck service status on every recomposition (covers returning from settings)
-    LaunchedEffect(enabled) {
-        serviceActive = AutoSendPrefs.isServiceEnabled(context)
+    // The service is toggled outside our process, in system Accessibility
+    // settings, so the only reliable moment to re-read it is when we come back
+    // to the foreground. Keying off `enabled` alone never caught that, which
+    // left the card reading "not enabled" after the user had just enabled it.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                serviceActive = AutoSendPrefs.isServiceEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     ElevatedCard(
