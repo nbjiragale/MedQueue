@@ -1,6 +1,7 @@
 package com.niranjan.medqueue.ui.screens
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -25,6 +26,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.niranjan.medqueue.R
 import com.niranjan.medqueue.autosend.AutoSendPrefs
 import com.niranjan.medqueue.contact.buildMessage
+import com.niranjan.medqueue.data.settings.AppLanguage
 import com.niranjan.medqueue.data.settings.AppSettings
 import com.niranjan.medqueue.data.settings.SettingsPrefs
 import com.niranjan.medqueue.reminders.Notifications
@@ -82,6 +84,12 @@ fun SettingsScreen(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                // ── Language ────────────────────────────────────────────────
+                // First card on the screen on purpose: a shopkeeper who cannot
+                // read the rest of the UI is here for exactly this control, and
+                // should not have to scroll past six English cards to find it.
+                LanguageCard(settingsPrefs)
+
                 // ── Shop ────────────────────────────────────────────────────
                 DsCard(spacing = 14.dp) {
                     Eyebrow(stringResource(R.string.section_shop))
@@ -178,6 +186,47 @@ fun SettingsScreen(
                 )
             }
         }
+    }
+}
+
+// ── Language ──────────────────────────────────────────────────────────────────
+
+/**
+ * Picks the language the shopkeeper-facing UI renders in.
+ *
+ * Applied on tap rather than on "Save settings": the point of the control is
+ * that you can see whether you picked the right one, and a shopkeeper who
+ * mis-tapped needs the way back to be readable.
+ */
+@Composable
+private fun LanguageCard(settingsPrefs: SettingsPrefs) {
+    val context = LocalContext.current
+    val current = remember { settingsPrefs.language() }
+
+    DsCard(spacing = 10.dp) {
+        Eyebrow(stringResource(R.string.section_language))
+
+        AppLanguage.entries.forEach { language ->
+            ChoiceRow(
+                label = stringResource(language.labelRes),
+                selected = language == current,
+                onSelect = {
+                    if (language != current) {
+                        settingsPrefs.setLanguage(language)
+                        // attachBaseContext runs again on recreate, so the UI
+                        // comes back in the new language with the current screen
+                        // — and any half-typed field on it — intact.
+                        (context as? Activity)?.recreate()
+                    }
+                }
+            )
+        }
+
+        Text(
+            text = stringResource(R.string.language_note),
+            style = MaterialTheme.typography.bodySmall,
+            color = Muted
+        )
     }
 }
 

@@ -37,7 +37,7 @@ import com.niranjan.medqueue.data.local.readyIndices
 import com.niranjan.medqueue.data.local.stage
 import com.niranjan.medqueue.navigation.FilterTag
 import com.niranjan.medqueue.ui.components.*
-import com.niranjan.medqueue.ui.formatRelative
+import com.niranjan.medqueue.ui.relativeTime
 import com.niranjan.medqueue.ui.startOfDay
 import com.niranjan.medqueue.ui.theme.*
 
@@ -423,7 +423,7 @@ private fun RequestRow(
                             deliveredLabel = stringResource(R.string.status_delivered)
                         )
                         Text(
-                            text = formatRelative(request.createdAt),
+                            text = relativeTime(request.createdAt),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Normal),
                             color = Muted,
                             maxLines = 1

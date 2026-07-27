@@ -115,6 +115,13 @@
     <string name="requested_at">%1$s ಕ್ಕೆ ಕೇಳಿದ್ದು</string>
     <string name="notified_at">%1$s ಕ್ಕೆ ತಿಳಿಸಲಾಗಿದೆ</string>
 
+    <!-- ── Relative timestamps ───────────────────────────────────────────── -->
+    <string name="relative_yesterday">ನಿನ್ನೆ</string>
+    <plurals name="relative_days_ago">
+        <item quantity="one">%1$d ದಿನದ ಹಿಂದೆ</item>
+        <item quantity="other">%1$d ದಿನಗಳ ಹಿಂದೆ</item>
+    </plurals>
+
     <!-- ── Contact outcomes ──────────────────────────────────────────────── -->
     <string name="error_invalid_phone">ಫೋನ್ ಸಂಖ್ಯೆ ಸರಿಯಿಲ್ಲ</string>
     <string name="error_whatsapp_missing">WhatsApp ಸ್ಥಾಪಿಸಿಲ್ಲ</string>
@@ -133,6 +140,8 @@
     <!-- ── Settings ──────────────────────────────────────────────────────── -->
     <string name="settings_title">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
     <string name="settings_subtitle">ಅಂಗಡಿ ವಿವರ ಮತ್ತು ಸಂದೇಶ ಮಾದರಿ</string>
+    <string name="section_language">ಭಾಷೆ</string>
+    <string name="language_note">ಇದು ಆ್ಯಪ್‌ನ ಪಠ್ಯವನ್ನಷ್ಟೇ ಬದಲಾಯಿಸುತ್ತದೆ — ಗ್ರಾಹಕರಿಗೆ ಹೋಗುವ ಸಂದೇಶ ಎರಡೂ ಭಾಷೆಯಲ್ಲಿಯೇ ಇರುತ್ತದೆ</string>
     <string name="section_shop">ಅಂಗಡಿ</string>
     <string name="section_primary_contact">ಮುಖ್ಯ ಸಂಪರ್ಕ</string>
     <string name="section_secondary_contact">ಎರಡನೇ ಸಂಪರ್ಕ</string>
@@ -166,9 +175,17 @@
     <string name="reminder_pending_title">ಬೇಡಿಕೆಗಳು ಇನ್ನೂ ಕಾಯುತ್ತಿವೆ</string>
     <string name="reminder_summary_title">ದಿನದ ಕೊನೆ</string>
 
+    <!-- The ablative "-ಇಂದ" rides on the age itself: Kannada agglutinates the
+         postposition, so it cannot sit loose in the sentence below. -->
+    <string name="age_a_day">ಒಂದು ದಿನದಿಂದ</string>
+    <plurals name="age_days">
+        <item quantity="one">%1$d ದಿನದಿಂದ</item>
+        <item quantity="other">%1$d ದಿನಗಳಿಂದ</item>
+    </plurals>
+
     <plurals name="reminder_pending_body">
-        <item quantity="one">%1$d ಬೇಡಿಕೆ %2$s ದಿಂದ ಬಾಕಿ ಇದೆ.</item>
-        <item quantity="other">%1$d ಬೇಡಿಕೆಗಳು ಬಾಕಿ ಇವೆ — ಅತ್ಯಂತ ಹಳೆಯದು %2$s ದಿಂದ.</item>
+        <item quantity="one">%1$d ಬೇಡಿಕೆ %2$s ಬಾಕಿ ಇದೆ.</item>
+        <item quantity="other">%1$d ಬೇಡಿಕೆಗಳು ಬಾಕಿ ಇವೆ — ಅತ್ಯಂತ ಹಳೆಯದು %2$s.</item>
     </plurals>
     <plurals name="reminder_summary_body">
         <item quantity="one">%1$d ಬೇಡಿಕೆ ಇನ್ನೂ ಬಾಕಿ ಇದೆ.</item>

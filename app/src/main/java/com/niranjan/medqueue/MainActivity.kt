@@ -1,5 +1,6 @@
 package com.niranjan.medqueue
 
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,12 +9,22 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.remember
+import com.niranjan.medqueue.data.settings.AppLocale
 import com.niranjan.medqueue.data.settings.SettingsPrefs
 import com.niranjan.medqueue.reminders.Reminders
 import com.niranjan.medqueue.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
     private val viewModel: RequestViewModel by viewModels()
+
+    /**
+     * Swaps in the shop's chosen language before any resource is resolved.
+     * Runs again after [recreate], which is how the Settings picker takes
+     * effect without a restart.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

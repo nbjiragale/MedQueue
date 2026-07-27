@@ -32,6 +32,20 @@ class SettingsPrefs(context: Context) {
         private const val KEY_ONBOARDED       = "hasOnboarded"
         private const val KEY_PENDING_ALERTS  = "remindPendingAlerts"
         private const val KEY_DAILY_SUMMARY   = "remindDailySummary"
+        private const val KEY_LANGUAGE        = "appLanguage"
+    }
+
+    // ── UI language ──────────────────────────────────────────────────────────
+
+    /**
+     * The language the shopkeeper chose, or [AppLanguage.DEFAULT] until they
+     * choose one. An unknown tag — a downgrade, or a language we dropped —
+     * falls back to the default rather than throwing.
+     */
+    fun language(): AppLanguage = AppLanguage.fromTag(prefs.getString(KEY_LANGUAGE, null))
+
+    fun setLanguage(language: AppLanguage) {
+        prefs.edit { putString(KEY_LANGUAGE, language.tag) }
     }
 
     // ── First-run state ──────────────────────────────────────────────────────
