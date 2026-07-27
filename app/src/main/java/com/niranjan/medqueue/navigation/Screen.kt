@@ -63,5 +63,8 @@ private const val KEY_EDIT       = "edit"
  * Queue filter chips. The redesign drops the old "Today" chip — today's count
  * moved into the header subtitle, where it reads as context rather than as
  * another thing to tap.
+ *
+ * [URGENT] narrows to open emergencies. They already sort to the top of every
+ * other view, but on a long queue the worker wants to see nothing else.
  */
-enum class FilterTag { ALL, PENDING, DELIVERED }
+enum class FilterTag { ALL, PENDING, URGENT, DELIVERED }

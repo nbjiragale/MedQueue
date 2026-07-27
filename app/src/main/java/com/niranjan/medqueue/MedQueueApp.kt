@@ -1,11 +1,15 @@
 package com.niranjan.medqueue
 
 import android.content.Context
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.launch
 import com.niranjan.medqueue.autosend.AutoSendPrefs
 import com.niranjan.medqueue.contact.ContactAction
 import com.niranjan.medqueue.contact.ContactActionResult
@@ -26,6 +30,39 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
         mutableStateOf(Screen.Splash)
     }
     val requests by vm.requests.collectAsState()
+
+    // One host shared by the queue and detail screens, so a snackbar raised on
+    // one survives the navigation that follows the action that raised it.
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val deliveredMessage = stringResource(R.string.delivered_undo_message)
+    val undoLabel = stringResource(R.string.action_undo)
+    val contactFailed = stringResource(R.string.queue_notify_failed)
+
+    /**
+     * Marks a request delivered, then offers an undo.
+     *
+     * The undo is skipped when auto-send fired: WhatsApp is in the foreground by
+     * then, so the snackbar would go unseen, and offering to undo something the
+     * customer has already been messaged about would be a lie.
+     */
+    fun deliver(request: RequestEntity) {
+        vm.markDelivered(request.id)
+        val autoSent = notifyOnDelivered(context, settingsPrefs, request)
+        if (autoSent) {
+            vm.markNotified(request.id)
+            return
+        }
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = deliveredMessage,
+                actionLabel = undoLabel,
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) vm.markPending(request.id)
+        }
+    }
 
     // System back walks the hierarchy instead of dropping straight out of the
     // app. The list is the root, so back there keeps the default behaviour.
@@ -67,8 +104,21 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
 
         Screen.RequestList -> RequestListScreen(
             requests = requests,
+            snackbarHostState = snackbarHostState,
             onAddClick = { screen = Screen.Home },
             onItemClick = { screen = Screen.RequestDetail(it.id) },
+            onNotify = { request ->
+                val message = buildMessage(settingsPrefs.read(), ContactAction.WHATSAPP)
+                val result = launchContactAction(
+                    context, ContactAction.WHATSAPP, request.phoneNumber, message
+                )
+                when (result) {
+                    ContactActionResult.Success,
+                    is ContactActionResult.AutoSent -> vm.markNotified(request.id)
+                    else -> scope.launch { snackbarHostState.showSnackbar(contactFailed) }
+                }
+            },
+            onDeliver = { request -> deliver(request) },
             bottomBar = bottomBar
         )
 
@@ -82,12 +132,13 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
                 RequestDetailScreen(
                     request = request,
                     settingsPrefs = settingsPrefs,
+                    snackbarHostState = snackbarHostState,
                     onEdit = { screen = Screen.EditRequest(request.id) },
                     onDelivered = {
-                        vm.markDelivered(request.id)
-                        notifyOnDelivered(context, settingsPrefs, request)
+                        deliver(request)
                         screen = Screen.RequestList
                     },
+                    onNotified = { vm.markNotified(request.id) },
                     onDelete = {
                         vm.deleteRequest(request.id)
                         screen = Screen.RequestList
@@ -129,20 +180,21 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
  *
  * This opens WhatsApp with the message prefilled; the accessibility service
  * taps Send only if the worker has separately enabled it. Failures are
- * deliberately quiet apart from a toast — the delivery status has already been
- * saved, and a messaging hiccup should not read as though that failed too.
+ * deliberately quiet — the delivery status has already been saved, and a
+ * messaging hiccup should not read as though that failed too.
+ *
+ * @return true if WhatsApp was actually launched, which the caller uses to
+ *   decide whether an undo snackbar would ever be seen.
  */
 private fun notifyOnDelivered(
     context: Context,
     settingsPrefs: SettingsPrefs,
     request: RequestEntity
-) {
-    if (!AutoSendPrefs.isAutoSendEnabled(context)) return
+): Boolean {
+    if (!AutoSendPrefs.isAutoSendEnabled(context)) return false
 
     val message = buildMessage(settingsPrefs.read(), ContactAction.WHATSAPP)
     val result = launchContactAction(context, ContactAction.WHATSAPP, request.phoneNumber, message)
 
-    if (result == ContactActionResult.WhatsAppNotInstalled) {
-        Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
-    }
+    return result == ContactActionResult.Success || result is ContactActionResult.AutoSent
 }

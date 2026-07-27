@@ -275,20 +275,28 @@ private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
                     .fillMaxSize()
                     .clickable { showViewer = true }
             )
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = Color.Black.copy(alpha = 0.55f),
+            // 48dp target around a 30dp chip: the visual stays small so it does
+            // not cover the photo, but the thumb gets something it can hit.
+            IconButton(
+                onClick = onClear,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .clickable(onClick = onClear)
+                    .size(48.dp)
             ) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = stringResource(R.string.action_remove_photo),
-                    tint = Color.White,
-                    modifier = Modifier.padding(6.dp).size(14.dp)
-                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.Black.copy(alpha = 0.55f))
+                ) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.action_remove_photo),
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
             }
         }
 

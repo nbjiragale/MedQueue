@@ -56,6 +56,21 @@ class RequestViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
+     * Reverses [markDelivered] — backs the queue's undo action.
+     *
+     * `notifiedAt` is left alone: undoing the delivery does not un-send the
+     * message, so the request drops back to "Notified", not to square one.
+     */
+    fun markPending(id: Int) {
+        viewModelScope.launch { dao.updateStatus(id, RequestStatus.PENDING) }
+    }
+
+    /** Records that the customer was messaged about this request, just now. */
+    fun markNotified(id: Int, timestamp: Long = System.currentTimeMillis()) {
+        viewModelScope.launch { dao.updateNotifiedAt(id, timestamp) }
+    }
+
+    /**
      * Edit customer name, phone, medicine, emergency flag and prescription.
      * Status and createdAt are preserved.
      */

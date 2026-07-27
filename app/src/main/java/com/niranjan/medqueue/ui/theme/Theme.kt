@@ -72,9 +72,21 @@ private val DarkColorScheme = darkColorScheme(
     surfaceTint           = md_theme_dark_surfaceTint
 )
 
+/**
+ * Light-only, deliberately.
+ *
+ * [DarkColorScheme] exists, but the screens do not consume it: they pair
+ * `MaterialTheme.colorScheme.surface` with hardcoded light content tokens
+ * ([Ink] for text, [Paper] for page backgrounds), so following the system into
+ * dark mode rendered near-black text on near-black cards across the whole app.
+ *
+ * Honest fix until a dark palette is actually designed: pin the scheme to
+ * light. Flipping this back to [isSystemInDarkTheme] requires routing every
+ * screen's colours through `MaterialTheme.colorScheme` first.
+ */
 @Composable
 fun MyApplicationTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     dynamicColor: Boolean = false,   // OFF so our medical palette is always visible
     content: @Composable () -> Unit
 ) {

@@ -11,6 +11,29 @@ enum class RequestStatus {
     DELIVERED
 }
 
+// ── Stage ───────────────────────────────────────────────────────────────────
+
+/**
+ * What the queue actually needs to show, which is one step finer than
+ * [RequestStatus].
+ *
+ * "Stock arrived, I messaged the customer" and "the customer came and took it"
+ * are hours or days apart in a shop, and the gap between them is the state the
+ * worker most needs to see — otherwise the same customer gets messaged twice,
+ * or never. [NOTIFIED] is that gap.
+ *
+ * Derived rather than stored as a third [RequestStatus] value so an existing
+ * row can never hold an impossible status/timestamp combination.
+ */
+enum class RequestStage { PENDING, NOTIFIED, DELIVERED }
+
+val RequestEntity.stage: RequestStage
+    get() = when {
+        status == RequestStatus.DELIVERED -> RequestStage.DELIVERED
+        notifiedAt != null                -> RequestStage.NOTIFIED
+        else                              -> RequestStage.PENDING
+    }
+
 // ── TypeConverter (used by AppDatabase) ─────────────────────────────────────
 
 class RequestConverters {
@@ -40,6 +63,12 @@ data class RequestEntity(
      * Stored as a path rather than a content URI because the source URI (camera
      * capture, photo picker) is only valid for the lifetime of the grant.
      */
-    val prescriptionPath: String? = null
+    val prescriptionPath: String? = null,
+    /**
+     * When the customer was last messaged about this request, or null if they
+     * never have been. Set by WhatsApp/SMS sends, and deliberately *not*
+     * cleared when a delivery is undone — the message was still sent.
+     */
+    val notifiedAt: Long? = null
 )
 

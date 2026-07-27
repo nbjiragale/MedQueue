@@ -8,7 +8,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [RequestEntity::class], version = 4, exportSchema = false)
+@Database(entities = [RequestEntity::class], version = 5, exportSchema = false)
 @TypeConverters(RequestConverters::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -43,6 +43,19 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Migration 4→5: when the customer was last messaged.
+         *
+         * Nullable with no default — existing rows genuinely have no answer,
+         * and back-filling them with a timestamp would claim every historical
+         * customer had already been told.
+         */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE requests ADD COLUMN notifiedAt INTEGER")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             // Double-checked locking: the second read inside the lock is what stops
             // two racing callers from each building their own database.
@@ -52,7 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "medqueue.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                     .also { INSTANCE = it }
             }
