@@ -58,28 +58,58 @@
 
     <!-- ── Queue ─────────────────────────────────────────────────────────── -->
     <string name="queue_title">Queue</string>
-    <string name="queue_subtitle">%1$d pending · %2$d today</string>
-    <string name="search_hint">Search name or phone</string>
+    <string name="queue_subtitle">%1$d to notify · %2$d awaiting pickup · %3$d today</string>
+    <string name="search_hint">Search name, phone or medicine</string>
+    <string name="action_clear_search">Clear search</string>
     <string name="filter_all">All</string>
     <string name="filter_pending">Pending</string>
+    <string name="filter_urgent">Urgent</string>
     <string name="filter_delivered">Delivered</string>
     <string name="status_pending">Pending</string>
+    <string name="status_notified">Notified</string>
     <string name="status_delivered">Delivered</string>
+    <string name="action_notify">Notify</string>
+    <string name="action_notify_again">Notify again</string>
+    <string name="no_medicines_listed">No medicines listed</string>
+    <string name="delivered_undo_message">Marked delivered</string>
+    <string name="action_undo">Undo</string>
+    <string name="queue_notify_failed">Could not message — open the request to try another way</string>
+    <string name="medicine_ready_pill">%1$d/%2$d in</string>
+    <plurals name="medicine_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
     <string name="badge_urgent">Urgent</string>
     <string name="badge_emergency">Emergency</string>
     <string name="no_name_provided">No name provided</string>
     <string name="empty_no_matches">No more requests match this filter</string>
     <string name="empty_no_requests">No requests yet</string>
-    <string name="empty_no_requests_hint">Tap + to save your first customer request</string>
-    <string name="add_request">Add request</string>
+    <string name="empty_no_requests_hint">Save a customer request and it will appear here</string>
+    <string name="add_request">New request</string>
+    <string name="action_open_search">Search requests</string>
+    <string name="action_close_search">Close search</string>
 
     <!-- ── Detail ────────────────────────────────────────────────────────── -->
     <string name="detail_title">Request</string>
     <string name="action_edit">Edit</string>
     <string name="action_delete">Delete</string>
     <string name="action_back">Back</string>
+    <string name="action_more">More actions</string>
     <string name="section_medicines">Medicines</string>
+    <string name="medicines_ready_count">%1$d of %2$d in stock</string>
     <string name="requested_at">Requested %1$s</string>
+    <string name="notified_at">Notified %1$s</string>
+
+    <!-- ── Contact outcomes ──────────────────────────────────────────────── -->
+    <string name="error_invalid_phone">Invalid phone number</string>
+    <string name="error_whatsapp_missing">WhatsApp is not installed</string>
+    <string name="error_no_handler">No app found to handle this</string>
+    <string name="error_send_failed">Could not send</string>
+    <string name="error_sms_permission_denied">SMS permission denied</string>
+    <string name="sms_sent">SMS sent</string>
+    <string name="sms_sent_parts">SMS sent (%1$d messages)</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_send_sms_instead">Send SMS</string>
     <string name="action_call">Call</string>
     <string name="action_whatsapp">WhatsApp</string>
     <string name="action_sms">SMS</string>

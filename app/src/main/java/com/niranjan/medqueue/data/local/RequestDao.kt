@@ -32,6 +32,12 @@ interface RequestDao {
     @Query("UPDATE requests SET prescriptionPath = :path WHERE id = :id")
     suspend fun updatePrescription(id: Int, path: String?)
 
+    @Query("UPDATE requests SET notifiedAt = :timestamp WHERE id = :id")
+    suspend fun updateNotifiedAt(id: Int, timestamp: Long?)
+
+    @Query("UPDATE requests SET readyItems = :readyItems WHERE id = :id")
+    suspend fun updateReadyItems(id: Int, readyItems: String)
+
     @Query("SELECT * FROM requests WHERE id = :id")
     suspend fun getById(id: Int): RequestEntity?
 

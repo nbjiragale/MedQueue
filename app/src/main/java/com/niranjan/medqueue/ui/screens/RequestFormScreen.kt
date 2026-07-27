@@ -1,7 +1,6 @@
 package com.niranjan.medqueue.ui.screens
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import com.niranjan.medqueue.R
 import com.niranjan.medqueue.data.local.RequestEntity
 import com.niranjan.medqueue.prescription.PrescriptionStore
@@ -48,9 +48,15 @@ fun RequestFormScreen(
     initial: RequestEntity?,
     onSubmit: (name: String, phone: String, medicine: String, emergency: Boolean, prescriptionPath: String?) -> Unit,
     onCancel: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     bottomBar: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    fun report(text: String) {
+        scope.launch { snackbarHostState.showSnackbar(text) }
+    }
 
     var phone     by rememberSaveable { mutableStateOf(initial?.phoneNumber.orEmpty()) }
     var name      by rememberSaveable { mutableStateOf(initial?.customerName.orEmpty()) }
@@ -83,7 +89,7 @@ fun RequestFormScreen(
         }
         val stored = PrescriptionStore.promoteCapture(context, staged)
         if (stored == null) {
-            Toast.makeText(context, photoFailed, Toast.LENGTH_SHORT).show()
+            report(photoFailed)
         } else {
             discardIfOrphan(photoPath)
             photoPath = stored
@@ -96,7 +102,7 @@ fun RequestFormScreen(
         if (uri == null) return@rememberLauncherForActivityResult
         val stored = PrescriptionStore.importFromUri(context, uri)
         if (stored == null) {
-            Toast.makeText(context, photoFailed, Toast.LENGTH_SHORT).show()
+            report(photoFailed)
         } else {
             discardIfOrphan(photoPath)
             photoPath = stored
@@ -110,6 +116,7 @@ fun RequestFormScreen(
     Scaffold(
         bottomBar = bottomBar,
         containerColor = Paper,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -184,7 +191,7 @@ fun RequestFormScreen(
                                     cameraLauncher.launch(uri)
                                 }.onFailure {
                                     stagedCapture = null
-                                    Toast.makeText(context, cameraUnavailable, Toast.LENGTH_SHORT).show()
+                                    report(cameraUnavailable)
                                 }
                             }
                         )
@@ -275,20 +282,28 @@ private fun PrescriptionSlot(path: String?, onClear: () -> Unit) {
                     .fillMaxSize()
                     .clickable { showViewer = true }
             )
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = Color.Black.copy(alpha = 0.55f),
+            // 48dp target around a 30dp chip: the visual stays small so it does
+            // not cover the photo, but the thumb gets something it can hit.
+            IconButton(
+                onClick = onClear,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .clickable(onClick = onClear)
+                    .size(48.dp)
             ) {
-                Icon(
-                    Icons.Filled.Close,
-                    contentDescription = stringResource(R.string.action_remove_photo),
-                    tint = Color.White,
-                    modifier = Modifier.padding(6.dp).size(14.dp)
-                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.Black.copy(alpha = 0.55f))
+                ) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.action_remove_photo),
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
             }
         }
 

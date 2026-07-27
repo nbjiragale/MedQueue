@@ -4,7 +4,6 @@ package com.niranjan.medqueue.ui.screens
 
 import android.Manifest
 import android.content.Context
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -18,7 +17,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MailOutline
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -36,11 +38,14 @@ import com.niranjan.medqueue.R
 import com.niranjan.medqueue.contact.*
 import com.niranjan.medqueue.data.local.RequestEntity
 import com.niranjan.medqueue.data.local.RequestStatus
+import com.niranjan.medqueue.data.local.readyIndices
+import com.niranjan.medqueue.data.local.stage
 import com.niranjan.medqueue.data.settings.SettingsPrefs
 import com.niranjan.medqueue.prescription.PrescriptionStore
 import com.niranjan.medqueue.ui.components.*
 import com.niranjan.medqueue.ui.formatFull
 import com.niranjan.medqueue.ui.theme.*
+import kotlinx.coroutines.launch
 import java.io.File
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -54,13 +59,17 @@ import java.io.File
 fun RequestDetailScreen(
     request: RequestEntity,
     settingsPrefs: SettingsPrefs,
+    snackbarHostState: SnackbarHostState,
     onEdit: () -> Unit,
     onDelivered: () -> Unit,
+    onNotified: () -> Unit,
+    onToggleItem: (index: Int, ready: Boolean) -> Unit,
     onDelete: () -> Unit,
     onBack: () -> Unit,
     bottomBar: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showPhotoViewer by remember { mutableStateOf(false) }
 
@@ -69,25 +78,59 @@ fun RequestDetailScreen(
         request.medicineName.lines().filter { it.isNotBlank() }
     }
 
+    // Resolved here because stringResource is only callable from a composable,
+    // and the dispatch below runs from callbacks.
+    val labels = ContactLabels(
+        invalidPhone     = stringResource(R.string.error_invalid_phone),
+        whatsAppMissing  = stringResource(R.string.error_whatsapp_missing),
+        noHandler        = stringResource(R.string.error_no_handler),
+        sendFailed       = stringResource(R.string.error_send_failed),
+        permissionDenied = stringResource(R.string.error_sms_permission_denied),
+        smsSent          = stringResource(R.string.sms_sent),
+        retry            = stringResource(R.string.action_retry),
+        smsInstead       = stringResource(R.string.action_send_sms_instead)
+    )
+    val smsSentParts = { parts: Int -> context.getString(R.string.sms_sent_parts, parts) }
+
+    val feedback: (String, String?, () -> Unit) -> Unit = { text, actionLabel, action ->
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = text,
+                actionLabel = actionLabel,
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) action()
+        }
+    }
+
     val smsPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            send(context, settingsPrefs, ContactAction.SMS, request.phoneNumber) { }
+            // Retry the send now that we can. The permission callback is a
+            // no-op this time round so a repeated denial cannot loop.
+            runContact(
+                context, settingsPrefs, ContactAction.SMS, request.phoneNumber,
+                labels, smsSentParts, onNotified, onNeedsSmsPermission = {}, onFeedback = feedback
+            )
         } else {
-            Toast.makeText(context, "SMS permission denied", Toast.LENGTH_SHORT).show()
+            feedback(labels.permissionDenied, null) {}
         }
     }
 
     val dispatch: (ContactAction) -> Unit = { action ->
-        send(context, settingsPrefs, action, request.phoneNumber) {
-            smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
-        }
+        runContact(
+            context, settingsPrefs, action, request.phoneNumber,
+            labels, smsSentParts, onNotified,
+            onNeedsSmsPermission = { smsPermissionLauncher.launch(Manifest.permission.SEND_SMS) },
+            onFeedback = feedback
+        )
     }
 
     Scaffold(
         bottomBar = bottomBar,
         containerColor = Paper,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -98,7 +141,13 @@ fun RequestDetailScreen(
                 backLabel = stringResource(R.string.action_back),
                 actions = {
                     HeaderAction(stringResource(R.string.action_edit), Teal, onEdit)
-                    HeaderAction(stringResource(R.string.action_delete), Red) { showDeleteConfirm = true }
+                    // Delete lives behind an overflow rather than as a second
+                    // small text target 14dp from Edit.
+                    OverflowDelete(
+                        menuLabel = stringResource(R.string.action_more),
+                        deleteLabel = stringResource(R.string.action_delete),
+                        onDelete = { showDeleteConfirm = true }
+                    )
                 }
             )
 
@@ -152,30 +201,52 @@ fun RequestDetailScreen(
                         }
 
                         StatusPill(
-                            status = request.status,
+                            stage = request.stage,
                             pendingLabel = stringResource(R.string.status_pending),
+                            notifiedLabel = stringResource(R.string.status_notified),
                             deliveredLabel = stringResource(R.string.status_delivered)
                         )
                     }
                 }
 
-                Text(
-                    text = stringResource(R.string.requested_at, formatFull(request.createdAt)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Muted,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
+                Column(
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.requested_at, formatFull(request.createdAt)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Muted
+                    )
+                    // The whole point of tracking this: whether the customer has
+                    // already been told, and when.
+                    request.notifiedAt?.let { at ->
+                        Text(
+                            text = stringResource(R.string.notified_at, formatFull(at)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Teal
+                        )
+                    }
+                }
 
                 // ── Medicines ───────────────────────────────────────────────
                 if (medicines.isNotEmpty()) {
+                    val ready = remember(request.readyItems) { request.readyIndices() }
+                    val readyCount = medicines.indices.count { it in ready }
+
                     DsCard(spacing = 10.dp) {
-                        Eyebrow(stringResource(R.string.section_medicines))
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Eyebrow(
+                            stringResource(R.string.section_medicines),
+                            trailing = stringResource(
+                                R.string.medicines_ready_count, readyCount, medicines.size
+                            )
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             medicines.forEachIndexed { index, med ->
-                                Text(
-                                    text = "${index + 1}. $med",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = Ink
+                                MedicineRow(
+                                    label = med,
+                                    ready = index in ready,
+                                    onToggle = { onToggleItem(index, index !in ready) }
                                 )
                             }
                         }
@@ -287,40 +358,154 @@ fun RequestDetailScreen(
 
 // ── Contact dispatch ──────────────────────────────────────────────────────────
 
+/** Strings the contact dispatch needs, resolved once in composition. */
+private data class ContactLabels(
+    val invalidPhone: String,
+    val whatsAppMissing: String,
+    val noHandler: String,
+    val sendFailed: String,
+    val permissionDenied: String,
+    val smsSent: String,
+    val retry: String,
+    val smsInstead: String
+)
+
 /**
- * Runs a contact action and reports the outcome. [onNeedsSmsPermission] is
- * invoked instead of a toast when the SMS path needs a grant first.
+ * Runs a contact action and reports the outcome through [onFeedback], which is
+ * wired to a snackbar rather than a toast — a toast cannot carry the "Retry"
+ * or "Send SMS instead" that these failures need to be recoverable.
+ *
+ * Top-level rather than a local lambda so the recovery actions can re-enter it.
  */
-private fun send(
+private fun runContact(
     context: Context,
     settingsPrefs: SettingsPrefs,
     action: ContactAction,
     phone: String,
-    onNeedsSmsPermission: () -> Unit
+    labels: ContactLabels,
+    smsSentParts: (Int) -> String,
+    onNotified: () -> Unit,
+    onNeedsSmsPermission: () -> Unit,
+    onFeedback: (String, String?, () -> Unit) -> Unit
 ) {
     val message = buildMessage(settingsPrefs.read(), action)
     when (val result = launchContactAction(context, action, phone, message)) {
-        ContactActionResult.Success -> Unit
-        is ContactActionResult.AutoSent ->
-            Toast.makeText(context, smsSentMessage(result.parts), Toast.LENGTH_SHORT).show()
+        // WhatsApp and SMS both count as telling the customer. A call only
+        // opens the dialler, so it proves nothing about whether they heard.
+        ContactActionResult.Success ->
+            if (action != ContactAction.CALL) onNotified()
+
+        is ContactActionResult.AutoSent -> {
+            onNotified()
+            val text = if (result.parts > 1) smsSentParts(result.parts) else labels.smsSent
+            onFeedback(text, null) {}
+        }
+
         ContactActionResult.InvalidPhone ->
-            Toast.makeText(context, "Invalid phone number", Toast.LENGTH_SHORT).show()
+            onFeedback(labels.invalidPhone, null) {}
+
         ContactActionResult.WhatsAppNotInstalled ->
-            Toast.makeText(context, "WhatsApp not installed", Toast.LENGTH_SHORT).show()
+            onFeedback(labels.whatsAppMissing, labels.smsInstead) {
+                runContact(
+                    context, settingsPrefs, ContactAction.SMS, phone,
+                    labels, smsSentParts, onNotified, onNeedsSmsPermission, onFeedback
+                )
+            }
+
         ContactActionResult.NoHandler ->
-            Toast.makeText(context, "No app found to handle this action", Toast.LENGTH_SHORT).show()
+            onFeedback(labels.noHandler, null) {}
+
         ContactActionResult.SendFailed ->
-            Toast.makeText(context, "Could not send — try again", Toast.LENGTH_SHORT).show()
-        ContactActionResult.SmsPermissionNeeded -> onNeedsSmsPermission()
+            onFeedback(labels.sendFailed, labels.retry) {
+                runContact(
+                    context, settingsPrefs, action, phone,
+                    labels, smsSentParts, onNotified, onNeedsSmsPermission, onFeedback
+                )
+            }
+
+        ContactActionResult.SmsPermissionNeeded ->
+            onNeedsSmsPermission()
     }
 }
 
+// ── Medicine line ─────────────────────────────────────────────────────────────
+
 /**
- * A background SMS is billed per part, and the bilingual template runs to
- * seven of them, so report the count rather than a silent "sent".
+ * One medicine, tickable as it arrives.
+ *
+ * A part-filled order is the normal case when a wholesaler delivers, and the
+ * binary request status had no way to express it.
  */
-internal fun smsSentMessage(parts: Int): String =
-    if (parts > 1) "SMS sent ✓ ($parts messages)" else "SMS sent ✓"
+@Composable
+private fun MedicineRow(label: String, ready: Boolean, onToggle: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onToggle)
+            .defaultMinSize(minHeight = 48.dp)
+            .padding(horizontal = 4.dp, vertical = 4.dp)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(20.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(if (ready) Teal else Color.Transparent)
+                .border(1.5.dp, if (ready) Teal else Line, RoundedCornerShape(6.dp))
+        ) {
+            if (ready) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(13.dp)
+                )
+            }
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (ready) Muted else Ink,
+            textDecoration = if (ready) TextDecoration.LineThrough else null
+        )
+    }
+}
+
+// ── Overflow ──────────────────────────────────────────────────────────────────
+
+@Composable
+private fun OverflowDelete(menuLabel: String, deleteLabel: String, onDelete: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+
+    Box {
+        IconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
+            Icon(
+                Icons.Filled.MoreVert,
+                contentDescription = menuLabel,
+                tint = Ink,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        deleteLabel,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Red
+                    )
+                },
+                onClick = {
+                    open = false
+                    onDelete()
+                }
+            )
+        }
+    }
+}
 
 // ── Delete confirmation ───────────────────────────────────────────────────────
 

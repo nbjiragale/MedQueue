@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.niranjan.medqueue.data.local.RequestStatus
+import com.niranjan.medqueue.data.local.RequestStage
 import com.niranjan.medqueue.ui.theme.*
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -39,24 +39,39 @@ private val ButtonShape = RoundedCornerShape(14.dp)
 
 // ── Headers ───────────────────────────────────────────────────────────────────
 
-/** White header strip with a big title and a muted subtitle. */
+/**
+ * White header strip with a big title and a muted subtitle.
+ *
+ * [trailing] holds controls that belong to the screen rather than to a row —
+ * the queue's search toggle, for instance.
+ */
 @Composable
 fun ScreenHeader(
     title: String,
     subtitle: String? = null,
-    topPadding: Dp = 20.dp
+    topPadding: Dp = 20.dp,
+    trailing: @Composable (() -> Unit)? = null
 ) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
-            .padding(start = 20.dp, end = 20.dp, top = topPadding, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+            .padding(start = 20.dp, end = if (trailing != null) 8.dp else 20.dp, top = topPadding, bottom = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge, color = Ink)
-        if (subtitle != null) {
-            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Muted)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(title, style = MaterialTheme.typography.titleLarge, color = Ink)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Muted)
+            }
+        }
+        if (trailing != null) {
+            Spacer(Modifier.width(8.dp))
+            trailing()
         }
     }
 }
@@ -104,18 +119,28 @@ fun DetailHeader(
     }
 }
 
-/** Trailing text action in a [DetailHeader]. */
+/**
+ * Trailing text action in a [DetailHeader].
+ *
+ * The label is small by design, but the target it sits in is not: 48dp minimum,
+ * because these are thumb targets on a counter phone.
+ */
 @Composable
 fun HeaderAction(label: String, tint: Color, onClick: () -> Unit) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-        color = tint,
+    Box(
+        contentAlignment = Alignment.Center,
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 6.dp)
-    )
+            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+            .padding(horizontal = 10.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            color = tint
+        )
+    }
 }
 
 // ── Cards ─────────────────────────────────────────────────────────────────────
@@ -253,21 +278,44 @@ fun DsField(
 
 // ── Badges ────────────────────────────────────────────────────────────────────
 
-/** Amber "Pending" / teal "Delivered" pill. */
+/**
+ * Amber "Pending" → teal "Notified" → grey "Delivered".
+ *
+ * Teal marks the live middle state rather than the finished one on purpose:
+ * a notified request is the one still owed something (the customer walking in),
+ * while a delivered request needs nothing and recedes.
+ */
 @Composable
-fun StatusPill(status: RequestStatus, pendingLabel: String, deliveredLabel: String) {
-    val pending = status == RequestStatus.PENDING
-    Pill(
-        text = if (pending) pendingLabel else deliveredLabel,
-        background = if (pending) AmberTint else TealTint,
-        foreground = if (pending) Amber else Teal
-    )
+fun StatusPill(
+    stage: RequestStage,
+    pendingLabel: String,
+    notifiedLabel: String,
+    deliveredLabel: String
+) {
+    val (text, background, foreground) = when (stage) {
+        RequestStage.PENDING   -> Triple(pendingLabel, AmberTint, Amber)
+        RequestStage.NOTIFIED  -> Triple(notifiedLabel, TealTint, Teal)
+        RequestStage.DELIVERED -> Triple(deliveredLabel, SlateTint, Muted)
+    }
+    Pill(text = text, background = background, foreground = foreground)
 }
 
 /** Red uppercase urgency pill. */
 @Composable
 fun UrgentPill(label: String) {
     Pill(text = label.uppercase(), background = RedTint, foreground = Red)
+}
+
+/**
+ * Neutral "N items" pill on a queue row.
+ *
+ * A five-item order and a one-item order rendered as the same width of
+ * truncated grey text, so the size of the job was invisible until the request
+ * was opened.
+ */
+@Composable
+fun CountPill(label: String) {
+    Pill(text = label, background = SlateTint, foreground = Muted)
 }
 
 @Composable
@@ -327,9 +375,11 @@ fun PrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled && !loading,
+        // Minimum rather than fixed: at a 1.5x system font scale — common on a
+        // shopkeeper's phone — a hard 50dp clipped the label.
         modifier = modifier
             .fillMaxWidth()
-            .height(50.dp),
+            .defaultMinSize(minHeight = 50.dp),
         shape = ButtonShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (loading) TealDark else Teal,
@@ -391,6 +441,42 @@ fun RowScope.ContactButton(
             label,
             style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
             color = foreground
+        )
+    }
+}
+
+/**
+ * Compact action inside a queue row — "Notify" and "Delivered".
+ *
+ * Held to the 48dp minimum even though it costs list density: these are the two
+ * taps the whole app exists for, and they are made one-handed at a counter.
+ */
+@Composable
+fun RowScope.RowAction(
+    label: String,
+    icon: @Composable () -> Unit,
+    background: Color,
+    foreground: Color,
+    onClick: () -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(10.dp))
+            .background(background)
+            .clickable(onClick = onClick)
+            .defaultMinSize(minHeight = 48.dp)
+            .padding(horizontal = 8.dp)
+    ) {
+        CompositionLocalProvider(LocalContentColor provides foreground) { icon() }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
+            color = foreground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

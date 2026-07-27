@@ -31,6 +31,13 @@ val DashedLine = Color(0xFFCFD7DC)
 /** Inactive switch track. */
 val TrackOff = Color(0xFFDCDFE3)
 
+/**
+ * Closed-out work. Delivered requests use a neutral pill rather than the teal
+ * one so that teal stays reserved for the live "notified, awaiting pickup"
+ * state — the queue reads amber → teal → grey as a request progresses.
+ */
+val SlateTint = Color(0xFFEDEFF2)
+
 /** WhatsApp action button in the detail screen's contact row. */
 val WhatsAppTint = Color(0xFFE9F7EE)
 val WhatsAppInk  = Color(0xFF1A7A3E)

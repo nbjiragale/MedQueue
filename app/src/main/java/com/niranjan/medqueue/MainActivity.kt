@@ -1,7 +1,9 @@
 package com.niranjan.medqueue
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -15,7 +17,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        // The app renders light-only (see MyApplicationTheme), so pin the system
+        // bars to dark icons. The no-arg default follows the system theme, which
+        // on a dark-mode phone drew light icons over our light header.
+        enableEdgeToEdge(
+            statusBarStyle     = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        )
 
         // Brings scheduled reminder work in line with the saved toggles. Cheap
         // and idempotent, and it repairs the schedule after an app update or a

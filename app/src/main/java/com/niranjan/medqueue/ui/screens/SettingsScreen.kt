@@ -3,7 +3,6 @@ package com.niranjan.medqueue.ui.screens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -32,6 +31,7 @@ import com.niranjan.medqueue.reminders.Notifications
 import com.niranjan.medqueue.reminders.Reminders
 import com.niranjan.medqueue.ui.components.*
 import com.niranjan.medqueue.ui.theme.*
+import kotlinx.coroutines.launch
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SETTINGS
@@ -41,9 +41,10 @@ import com.niranjan.medqueue.ui.theme.*
 fun SettingsScreen(
     settingsPrefs: SettingsPrefs,
     onBack: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     bottomBar: @Composable () -> Unit = {}
 ) {
-    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val saved = remember { settingsPrefs.read() }
 
     var shopName      by rememberSaveable { mutableStateOf(saved.shopName) }
@@ -64,6 +65,7 @@ fun SettingsScreen(
     Scaffold(
         bottomBar = bottomBar,
         containerColor = Paper,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -170,7 +172,7 @@ fun SettingsScreen(
                                 contact2Name.trim(), contact2Phone
                             )
                         )
-                        Toast.makeText(context, settingsSaved, Toast.LENGTH_SHORT).show()
+                        scope.launch { snackbarHostState.showSnackbar(settingsSaved) }
                         onBack()
                     }
                 )

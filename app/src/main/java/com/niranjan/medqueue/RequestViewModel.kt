@@ -56,6 +56,30 @@ class RequestViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
+     * Reverses [markDelivered] — backs the queue's undo action.
+     *
+     * `notifiedAt` is left alone: undoing the delivery does not un-send the
+     * message, so the request drops back to "Notified", not to square one.
+     */
+    fun markPending(id: Int) {
+        viewModelScope.launch { dao.updateStatus(id, RequestStatus.PENDING) }
+    }
+
+    /** Records that the customer was messaged about this request, just now. */
+    fun markNotified(id: Int, timestamp: Long = System.currentTimeMillis()) {
+        viewModelScope.launch { dao.updateNotifiedAt(id, timestamp) }
+    }
+
+    /** Ticks a single medicine line as arrived, or un-ticks it. */
+    fun setItemReady(id: Int, index: Int, ready: Boolean) {
+        viewModelScope.launch {
+            val current = dao.getById(id)?.readyIndices() ?: return@launch
+            val updated = if (ready) current + index else current - index
+            dao.updateReadyItems(id, updated.toReadyItems())
+        }
+    }
+
+    /**
      * Edit customer name, phone, medicine, emergency flag and prescription.
      * Status and createdAt are preserved.
      */
@@ -71,16 +95,25 @@ class RequestViewModel(application: Application) : AndroidViewModel(application)
         if (phone.isEmpty()) return
 
         viewModelScope.launch {
-            val previousPath = dao.getById(id)?.prescriptionPath
+            val previous = dao.getById(id)
+            val previousPath = previous?.prescriptionPath
+            val trimmedMedicine = medicineName.trim()
 
             dao.updateFields(
                 id           = id,
                 customerName = customerName.trim(),
                 phoneNumber  = phone,
-                medicineName = medicineName.trim()
+                medicineName = trimmedMedicine
             )
             dao.updateEmergency(id, isEmergency)
             dao.updatePrescription(id, prescriptionPath)
+
+            // readyItems are positional. Once the medicine list changes, index 2
+            // no longer means what it meant when it was ticked, so drop them
+            // rather than silently mark the wrong drug as arrived.
+            if (previous != null && previous.medicineName != trimmedMedicine) {
+                dao.updateReadyItems(id, "")
+            }
 
             // A replaced or cleared photo would otherwise sit on disk forever.
             if (previousPath != null && previousPath != prescriptionPath) {
