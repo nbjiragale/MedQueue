@@ -31,20 +31,13 @@ class PendingAlertWorker(
             .getStale(cutoff = cutoff)
 
         if (stale.isNotEmpty()) {
-            val oldestAgeHours = (System.currentTimeMillis() - stale.first().createdAt) /
-                    TimeUnit.HOURS.toMillis(1)
             Notifications.showPendingAlert(
                 applicationContext,
                 staleCount = stale.size,
-                oldestLabel = describeAge(oldestAgeHours)
+                oldestAgeMillis = System.currentTimeMillis() - stale.first().createdAt
             )
         }
         return Result.success()
-    }
-
-    private fun describeAge(hours: Long): String = when {
-        hours < 48 -> "a day"
-        else       -> "${hours / 24} days"
     }
 
     companion object {

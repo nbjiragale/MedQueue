@@ -13,10 +13,17 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.niranjan.medqueue.MainActivity
 import com.niranjan.medqueue.R
+import com.niranjan.medqueue.data.settings.AppLocale
+import java.util.concurrent.TimeUnit
 
 /**
  * Notification plumbing for the two reminders in the redesign:
  * stale-pending alerts and the end-of-day summary.
+ *
+ * Every string here is resolved against [AppLocale], not the caller's context:
+ * these fire from workers holding the application context, which follows the
+ * *phone's* locale and would push English reminders to a shop running the app
+ * in Kannada.
  */
 object Notifications {
 
@@ -26,26 +33,32 @@ object Notifications {
     private const val ID_PENDING = 2001
     private const val ID_SUMMARY = 2002
 
-    /** Idempotent — safe to call on every app start and from workers. */
+    /**
+     * Idempotent — safe to call on every app start and from workers.
+     *
+     * Re-running it also re-labels the channels in the current language, which
+     * is what carries a language change through to the system settings screen.
+     */
     fun ensureChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
 
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        val localized = AppLocale.wrap(context)
 
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_PENDING,
-                context.getString(R.string.channel_pending_name),
+                localized.getString(R.string.channel_pending_name),
                 NotificationManager.IMPORTANCE_DEFAULT
-            ).apply { description = context.getString(R.string.channel_pending_desc) }
+            ).apply { description = localized.getString(R.string.channel_pending_desc) }
         )
 
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_SUMMARY,
-                context.getString(R.string.channel_summary_name),
+                localized.getString(R.string.channel_summary_name),
                 NotificationManager.IMPORTANCE_LOW
-            ).apply { description = context.getString(R.string.channel_summary_desc) }
+            ).apply { description = localized.getString(R.string.channel_summary_desc) }
         )
     }
 
@@ -58,30 +71,47 @@ object Notifications {
             NotificationManagerCompat.from(context).areNotificationsEnabled()
         }
 
-    fun showPendingAlert(context: Context, staleCount: Int, oldestLabel: String) {
-        val text = context.resources.getQuantityString(
-            R.plurals.reminder_pending_body, staleCount, staleCount, oldestLabel
+    /** [oldestAgeMillis] is how long the longest-waiting request has sat. */
+    fun showPendingAlert(context: Context, staleCount: Int, oldestAgeMillis: Long) {
+        val localized = AppLocale.wrap(context)
+        val text = localized.resources.getQuantityString(
+            R.plurals.reminder_pending_body, staleCount, staleCount, describeAge(localized, oldestAgeMillis)
         )
         post(
             context,
             id = ID_PENDING,
             channel = CHANNEL_PENDING,
-            title = context.getString(R.string.reminder_pending_title),
+            title = localized.getString(R.string.reminder_pending_title),
             text = text
         )
     }
 
     fun showDailySummary(context: Context, pendingCount: Int) {
-        val text = context.resources.getQuantityString(
+        val localized = AppLocale.wrap(context)
+        val text = localized.resources.getQuantityString(
             R.plurals.reminder_summary_body, pendingCount, pendingCount
         )
         post(
             context,
             id = ID_SUMMARY,
             channel = CHANNEL_SUMMARY,
-            title = context.getString(R.string.reminder_summary_title),
+            title = localized.getString(R.string.reminder_summary_title),
             text = text
         )
+    }
+
+    /**
+     * "a day" / "3 days", for the sentence the pending alert wraps it in. It
+     * lives here rather than in the worker so it is translated alongside the
+     * body it is interpolated into.
+     */
+    private fun describeAge(localized: Context, ageMillis: Long): String {
+        val days = (ageMillis / TimeUnit.DAYS.toMillis(1)).toInt()
+        return if (days < 2) {
+            localized.getString(R.string.age_a_day)
+        } else {
+            localized.resources.getQuantityString(R.plurals.age_days, days, days)
+        }
     }
 
     private fun post(context: Context, id: Int, channel: String, title: String, text: String) {

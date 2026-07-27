@@ -30,6 +30,14 @@
     <string name="label_optional">(optional)</string>
     <string name="phone_prefix">+91</string>
 
+    <!-- ── Language names ────────────────────────────────────────────────────
+         Each language is named in its own script, so these read the same in
+         every locale and are never translated: someone switching *away* from
+         a language they cannot read has to be able to find their own. -->
+    <string name="language_english" translatable="false">English</string>
+    <string name="language_kannada" translatable="false">ಕನ್ನಡ</string>
+    <string name="language_hindi" translatable="false">हिंदी</string>
+
     <!-- ── New / edit request ────────────────────────────────────────────── -->
     <string name="new_request">New request</string>
     <string name="new_request_subtitle">Save a customer\'s medicine order</string>
@@ -100,6 +108,13 @@
     <string name="requested_at">Requested %1$s</string>
     <string name="notified_at">Notified %1$s</string>
 
+    <!-- ── Relative timestamps ───────────────────────────────────────────── -->
+    <string name="relative_yesterday">Yesterday</string>
+    <plurals name="relative_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+
     <!-- ── Contact outcomes ──────────────────────────────────────────────── -->
     <string name="error_invalid_phone">Invalid phone number</string>
     <string name="error_whatsapp_missing">WhatsApp is not installed</string>
@@ -120,6 +135,8 @@
     <!-- ── Settings ──────────────────────────────────────────────────────── -->
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">Shop details &amp; message template</string>
+    <string name="section_language">Language</string>
+    <string name="language_note">Changes the app text only — messages to customers stay bilingual</string>
     <string name="section_shop">Shop</string>
     <string name="section_primary_contact">Primary contact</string>
     <string name="section_secondary_contact">Secondary contact</string>
@@ -152,6 +169,14 @@
     <string name="channel_summary_desc">End-of-day count of requests still outstanding</string>
     <string name="reminder_pending_title">Requests still waiting</string>
     <string name="reminder_summary_title">End of day</string>
+
+    <!-- How long the oldest pending request has waited, as interpolated into
+         reminder_pending_body. -->
+    <string name="age_a_day">a day</string>
+    <plurals name="age_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
 
     <plurals name="reminder_pending_body">
         <item quantity="one">%1$d request has been pending for %2$s.</item>

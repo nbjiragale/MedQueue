@@ -113,6 +113,13 @@
     <string name="requested_at">%1$s को माँगा</string>
     <string name="notified_at">%1$s को सूचित किया</string>
 
+    <!-- ── Relative timestamps ──────────────────────────────────── -->
+    <string name="relative_yesterday">कल</string>
+    <plurals name="relative_days_ago">
+        <item quantity="one">%1$d दिन पहले</item>
+        <item quantity="other">%1$d दिन पहले</item>
+    </plurals>
+
     <!-- ── Contact outcomes ──────────────────────────────────────────────── -->
     <string name="error_invalid_phone">फ़ोन नंबर सही नहीं है</string>
     <string name="error_whatsapp_missing">WhatsApp इंस्टॉल नहीं है</string>
@@ -131,6 +138,8 @@
     <!-- ── Settings ──────────────────────────────────────────────────────── -->
     <string name="settings_title">सेटिंग</string>
     <string name="settings_subtitle">दुकान की जानकारी और संदेश का नमूना</string>
+    <string name="section_language">भाषा</string>
+    <string name="language_note">यह सिर्फ़ ऐप की भाषा बदलता है — ग्राहकों को जाने वाला संदेश दोनों भाषाओं में ही रहेगा</string>
     <string name="section_shop">दुकान</string>
     <string name="section_primary_contact">मुख्य संपर्क</string>
     <string name="section_secondary_contact">दूसरा संपर्क</string>
@@ -163,6 +172,12 @@
     <string name="channel_summary_desc">दिन के अंत में बाकी ऑर्डर की गिनती</string>
     <string name="reminder_pending_title">ऑर्डर अब भी बाकी हैं</string>
     <string name="reminder_summary_title">दिन का अंत</string>
+
+    <string name="age_a_day">एक दिन</string>
+    <plurals name="age_days">
+        <item quantity="one">%1$d दिन</item>
+        <item quantity="other">%1$d दिन</item>
+    </plurals>
 
     <plurals name="reminder_pending_body">
         <item quantity="one">%1$d ऑर्डर %2$s से बाकी है।</item>

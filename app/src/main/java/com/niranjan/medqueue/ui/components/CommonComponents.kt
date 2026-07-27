@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -518,6 +520,51 @@ fun ToggleRow(
                 uncheckedBorderColor = TrackOff
             )
         )
+    }
+}
+
+/**
+ * One option in a pick-exactly-one list — a tinted, tappable row that carries
+ * its own selected state. Used by the language picker.
+ *
+ * The whole row is the target rather than just the radio: this is tapped from
+ * behind a counter, often one-handed, and a 20dp dot is not a fair target.
+ */
+@Composable
+fun ChoiceRow(
+    label: String,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
+        shape = FieldShape,
+        color = if (selected) TealTint else Paper
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleSmall.copy(fontSize = 15.sp),
+                color = if (selected) Teal else Ink,
+                modifier = Modifier.weight(1f)
+            )
+            RadioButton(
+                selected = selected,
+                // Already handled by the row, and a second target here would
+                // read as two controls to a screen reader.
+                onClick = null,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = Teal,
+                    unselectedColor = Muted
+                )
+            )
+        }
     }
 }
 
