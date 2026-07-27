@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Kannada (kn) — NEEDS NATIVE REVIEW BEFORE RELEASE.
+
+    Translated without a native speaker. The terminology choices worth checking
+    first, because they repeat everywhere:
+      · "request"      → "ಬೇಡಿಕೆ"
+      · "delivered"    → "ಕೊಟ್ಟಾಗಿದೆ"
+      · "pending"      → "ಬಾಕಿ"
+      · "prescription" → "ಚೀಟಿ"
+
+    Brand and protocol names (MedQueue, WhatsApp, SMS, +91) are deliberately
+    absent so they fall back to values/strings.xml untranslated.
+
+    Manrope carries no Kannada glyphs; the platform falls back to Noto Sans
+    Kannada per-glyph, so metrics will differ slightly from the Latin UI.
+-->
+<resources>
+    <string name="app_tagline">ಔಷಧಿ ಬೇಡಿಕೆಗಳು, ಸರಳವಾಗಿ</string>
+
+    <!-- ── Bottom navigation ─────────────────────────────────────────────── -->
+    <string name="nav_queue">ಸರತಿ</string>
+    <string name="nav_new">ಹೊಸದು</string>
+    <string name="nav_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+
+    <!-- ── Onboarding ────────────────────────────────────────────────────── -->
+    <string name="onboarding_title">ನಿಮ್ಮ ಅಂಗಡಿಯನ್ನು ಹೊಂದಿಸಿ</string>
+    <string name="onboarding_subtitle">ಒಂದು ನಿಮಿಷಕ್ಕಿಂತ ಕಡಿಮೆ — ರಸೀದಿ ಮತ್ತು ಗ್ರಾಹಕರಿಗೆ ಕಳುಹಿಸುವ ಸಂದೇಶಗಳಲ್ಲಿ ಬಳಸಲಾಗುತ್ತದೆ</string>
+    <string name="onboarding_prefs_title">ಸರತಿಯ ಮೇಲೆ ಗಮನವಿಡಿ</string>
+    <string name="onboarding_prefs_subtitle">ನಿಮಗೆ ಬೇಕಾದ ಜ್ಞಾಪನೆಗಳನ್ನು ಆರಿಸಿ. ಇವನ್ನು ಯಾವಾಗ ಬೇಕಾದರೂ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಬದಲಾಯಿಸಬಹುದು.</string>
+    <string name="onboarding_shop_details">ಅಂಗಡಿಯ ವಿವರ</string>
+    <string name="onboarding_your_name">ನಿಮ್ಮ ಹೆಸರು</string>
+    <string name="onboarding_your_name_hint">ಮಾಲೀಕ / ಸಿಬ್ಬಂದಿ ಹೆಸರು</string>
+    <string name="onboarding_continue">ಮುಂದುವರಿಸಿ</string>
+    <string name="onboarding_get_started">ಪ್ರಾರಂಭಿಸಿ</string>
+    <string name="onboarding_back">ಹಿಂದೆ</string>
+
+    <!-- ── Shared field labels ───────────────────────────────────────────── -->
+    <string name="label_shop_name">ಅಂಗಡಿಯ ಹೆಸರು</string>
+    <string name="label_shop_name_hint">ಉದಾ. Ainapur Medical Store</string>
+    <string name="label_address">ವಿಳಾಸ</string>
+    <string name="label_address_hint">ಅಂಗಡಿಯ ವಿಳಾಸ</string>
+    <string name="label_name">ಹೆಸರು</string>
+    <string name="label_phone">ಫೋನ್</string>
+    <string name="label_phone_hint">10 ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ</string>
+    <string name="label_optional">(ಐಚ್ಛಿಕ)</string>
+
+    <!-- ── New / edit request ────────────────────────────────────────────── -->
+    <string name="new_request">ಹೊಸ ಬೇಡಿಕೆ</string>
+    <string name="new_request_subtitle">ಗ್ರಾಹಕರ ಔಷಧಿ ಬೇಡಿಕೆಯನ್ನು ಉಳಿಸಿ</string>
+    <string name="edit_request">ಬೇಡಿಕೆ ಬದಲಾಯಿಸಿ</string>
+    <string name="edit_request_subtitle">ಗ್ರಾಹಕ ಅಥವಾ ಔಷಧಿ ವಿವರ ನವೀಕರಿಸಿ</string>
+    <string name="section_customer">ಗ್ರಾಹಕ</string>
+    <string name="section_medicine">ಔಷಧಿ</string>
+    <string name="section_prescription">ಚೀಟಿ</string>
+    <string name="customer_name_hint">ಗ್ರಾಹಕರ ಪೂರ್ಣ ಹೆಸರು</string>
+    <string name="medicines_hint">ಪ್ರತಿ ಸಾಲಿಗೆ ಒಂದು — ಉದಾ. Paracetamol 650mg</string>
+    <string name="prescription_none">ಯಾವುದೇ ಚೀಟಿ ಲಗತ್ತಿಸಿಲ್ಲ</string>
+    <string name="action_camera">ಕ್ಯಾಮೆರಾ</string>
+    <string name="action_gallery">ಗ್ಯಾಲರಿ</string>
+    <string name="action_remove_photo">ಫೋಟೋ ತೆಗೆದುಹಾಕಿ</string>
+    <string name="action_close">ಮುಚ್ಚಿ</string>
+    <string name="action_view_photo">ಚೀಟಿಯನ್ನು ಪೂರ್ಣ ಪರದೆಯಲ್ಲಿ ನೋಡಿ</string>
+    <string name="mark_emergency">ತುರ್ತು ಎಂದು ಗುರುತಿಸಿ</string>
+    <string name="save_request">ಬೇಡಿಕೆ ಉಳಿಸಿ</string>
+    <string name="save_changes">ಬದಲಾವಣೆ ಉಳಿಸಿ</string>
+    <string name="saving">ಉಳಿಸಲಾಗುತ್ತಿದೆ…</string>
+    <string name="cancel">ರದ್ದುಮಾಡಿ</string>
+    <string name="phone_required">ಫೋನ್ ಸಂಖ್ಯೆ ಬೇಕು</string>
+    <string name="phone_invalid">ಸರಿಯಾದ 10 ಅಂಕಿಯ ಸಂಖ್ಯೆ ನಮೂದಿಸಿ</string>
+    <string name="camera_unavailable">ಕ್ಯಾಮೆರಾ ಆ್ಯಪ್ ಲಭ್ಯವಿಲ್ಲ</string>
+    <string name="photo_failed">ಆ ಫೋಟೋ ಲಗತ್ತಿಸಲಾಗಲಿಲ್ಲ</string>
+
+    <!-- ── Queue ─────────────────────────────────────────────────────────── -->
+    <string name="queue_title">ಸರತಿ</string>
+    <string name="queue_subtitle">%1$d ತಿಳಿಸಬೇಕು · %2$d ತೆಗೆದುಕೊಳ್ಳಬೇಕು · %3$d ಇಂದು</string>
+    <string name="search_hint">ಹೆಸರು, ಫೋನ್ ಅಥವಾ ಔಷಧಿ ಹುಡುಕಿ</string>
+    <string name="action_clear_search">ಹುಡುಕಾಟ ತೆರವುಗೊಳಿಸಿ</string>
+    <string name="filter_all">ಎಲ್ಲಾ</string>
+    <string name="filter_pending">ಬಾಕಿ</string>
+    <string name="filter_urgent">ತುರ್ತು</string>
+    <string name="filter_delivered">ಕೊಟ್ಟಾಗಿದೆ</string>
+    <string name="status_pending">ಬಾಕಿ</string>
+    <string name="status_notified">ತಿಳಿಸಲಾಗಿದೆ</string>
+    <string name="status_delivered">ಕೊಟ್ಟಾಗಿದೆ</string>
+    <string name="action_notify">ತಿಳಿಸಿ</string>
+    <string name="action_notify_again">ಮತ್ತೆ ತಿಳಿಸಿ</string>
+    <string name="no_medicines_listed">ಯಾವುದೇ ಔಷಧಿ ಬರೆದಿಲ್ಲ</string>
+    <string name="delivered_undo_message">ಕೊಟ್ಟಾಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ</string>
+    <string name="action_undo">ಹಿಂತಿರುಗಿಸಿ</string>
+    <string name="queue_notify_failed">ಸಂದೇಶ ಕಳುಹಿಸಲಾಗಲಿಲ್ಲ — ಬೇಡಿಕೆ ತೆರೆದು ಬೇರೆ ವಿಧಾನ ಪ್ರಯತ್ನಿಸಿ</string>
+    <string name="medicine_ready_pill">%1$d/%2$d ಬಂದಿದೆ</string>
+    <plurals name="medicine_count">
+        <item quantity="one">%1$d ಔಷಧಿ</item>
+        <item quantity="other">%1$d ಔಷಧಿಗಳು</item>
+    </plurals>
+    <string name="badge_urgent">ತುರ್ತು</string>
+    <string name="badge_emergency">ತುರ್ತು</string>
+    <string name="no_name_provided">ಹೆಸರು ನೀಡಿಲ್ಲ</string>
+    <string name="empty_no_matches">ಈ ಫಿಲ್ಟರ್‌ಗೆ ಇನ್ನು ಬೇಡಿಕೆಗಳಿಲ್ಲ</string>
+    <string name="empty_no_requests">ಇನ್ನೂ ಯಾವುದೇ ಬೇಡಿಕೆ ಇಲ್ಲ</string>
+    <string name="empty_no_requests_hint">ಗ್ರಾಹಕರ ಬೇಡಿಕೆ ಉಳಿಸಿದರೆ ಅದು ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತದೆ</string>
+    <string name="add_request">ಹೊಸ ಬೇಡಿಕೆ</string>
+    <string name="action_open_search">ಬೇಡಿಕೆ ಹುಡುಕಿ</string>
+    <string name="action_close_search">ಹುಡುಕಾಟ ಮುಚ್ಚಿ</string>
+
+    <!-- ── Detail ────────────────────────────────────────────────────────── -->
+    <string name="detail_title">ಬೇಡಿಕೆ</string>
+    <string name="action_edit">ಬದಲಾಯಿಸಿ</string>
+    <string name="action_delete">ಅಳಿಸಿ</string>
+    <string name="action_back">ಹಿಂದೆ</string>
+    <string name="action_more">ಇನ್ನಷ್ಟು</string>
+    <string name="section_medicines">ಔಷಧಿಗಳು</string>
+    <string name="medicines_ready_count">%2$d ರಲ್ಲಿ %1$d ಬಂದಿದೆ</string>
+    <string name="requested_at">%1$s ಕ್ಕೆ ಕೇಳಿದ್ದು</string>
+    <string name="notified_at">%1$s ಕ್ಕೆ ತಿಳಿಸಲಾಗಿದೆ</string>
+
+    <!-- ── Contact outcomes ──────────────────────────────────────────────── -->
+    <string name="error_invalid_phone">ಫೋನ್ ಸಂಖ್ಯೆ ಸರಿಯಿಲ್ಲ</string>
+    <string name="error_whatsapp_missing">WhatsApp ಸ್ಥಾಪಿಸಿಲ್ಲ</string>
+    <string name="error_no_handler">ಇದಕ್ಕಾಗಿ ಯಾವುದೇ ಆ್ಯಪ್ ಸಿಗಲಿಲ್ಲ</string>
+    <string name="error_send_failed">ಕಳುಹಿಸಲಾಗಲಿಲ್ಲ</string>
+    <string name="error_sms_permission_denied">SMS ಅನುಮತಿ ನಿರಾಕರಿಸಲಾಗಿದೆ</string>
+    <string name="sms_sent">SMS ಕಳುಹಿಸಲಾಗಿದೆ</string>
+    <string name="sms_sent_parts">SMS ಕಳುಹಿಸಲಾಗಿದೆ (%1$d ಸಂದೇಶಗಳು)</string>
+    <string name="action_retry">ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ</string>
+    <string name="action_send_sms_instead">SMS ಕಳುಹಿಸಿ</string>
+    <string name="action_call">ಕರೆ</string>
+    <string name="mark_delivered">ಕೊಟ್ಟಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿ</string>
+    <string name="delete_confirm_title">ಬೇಡಿಕೆ ಅಳಿಸಿ</string>
+    <string name="delete_confirm_body">ಇದು ಬೇಡಿಕೆ ಮತ್ತು ಅದರ ಚೀಟಿ ಫೋಟೋ ಎರಡನ್ನೂ ತೆಗೆದುಹಾಕುತ್ತದೆ. ಇದನ್ನು ಹಿಂತಿರುಗಿಸಲಾಗದು.</string>
+
+    <!-- ── Settings ──────────────────────────────────────────────────────── -->
+    <string name="settings_title">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+    <string name="settings_subtitle">ಅಂಗಡಿ ವಿವರ ಮತ್ತು ಸಂದೇಶ ಮಾದರಿ</string>
+    <string name="section_shop">ಅಂಗಡಿ</string>
+    <string name="section_primary_contact">ಮುಖ್ಯ ಸಂಪರ್ಕ</string>
+    <string name="section_secondary_contact">ಎರಡನೇ ಸಂಪರ್ಕ</string>
+    <string name="section_message_preview">ಸಂದೇಶದ ಮಾದರಿ</string>
+    <string name="section_reminders">ಜ್ಞಾಪನೆಗಳು</string>
+    <string name="auto_send_whatsapp">WhatsApp ನಲ್ಲಿ ಸ್ವಯಂ ಕಳುಹಿಸಿ</string>
+    <string name="auto_send_whatsapp_sub">ಕೊಟ್ಟಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ತಾನಾಗಿಯೇ ಕಳುಹಿಸುತ್ತದೆ</string>
+    <string name="auto_send_whatsapp_sub_onboarding">ಕೊಟ್ಟಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ಗ್ರಾಹಕರಿಗೆ ತಾನಾಗಿಯೇ ತಿಳಿಸಿ</string>
+    <string name="auto_send_sms">SMS ಸ್ವಯಂ ಕಳುಹಿಸಿ</string>
+    <string name="auto_send_sms_sub">SMS ಆ್ಯಪ್ ತೆರೆಯದೆ ಹಿನ್ನೆಲೆಯಲ್ಲಿ SMS ಕಳುಹಿಸಿ</string>
+    <string name="auto_send_service_active">ಪ್ರವೇಶಸಾಧ್ಯತೆ ಸೇವೆ ಚಾಲನೆಯಲ್ಲಿದೆ</string>
+    <string name="auto_send_service_inactive">ಸೇವೆ ಸಕ್ರಿಯವಾಗಿಲ್ಲ — ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="auto_send_sms_permission_granted">SMS ಅನುಮತಿ ನೀಡಲಾಗಿದೆ</string>
+    <string name="auto_send_sms_permission_denied">ಅನುಮತಿ ನಿರಾಕರಿಸಲಾಗಿದೆ — ನೀಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ</string>
+    <string name="reminder_pending_alerts">ಬಾಕಿ ಬೇಡಿಕೆ ಎಚ್ಚರಿಕೆ</string>
+    <string name="reminder_pending_alerts_sub">ಬೇಡಿಕೆ 24 ಗಂಟೆಗಿಂತ ಹೆಚ್ಚು ಬಾಕಿ ಇದ್ದರೆ ತಿಳಿಸಿ</string>
+    <string name="reminder_daily_summary">ದಿನದ ಸಾರಾಂಶ</string>
+    <string name="reminder_daily_summary_sub">ದಿನದ ಕೊನೆಯಲ್ಲಿ ಬಾಕಿ ಬೇಡಿಕೆಗಳ ಎಣಿಕೆ</string>
+    <string name="save_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಉಳಿಸಿ</string>
+    <string name="settings_saved">ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಉಳಿಸಲಾಗಿದೆ</string>
+    <string name="notifications_blocked">ಜ್ಞಾಪನೆ ಪಡೆಯಲು ಅಧಿಸೂಚನೆ ಆನ್ ಮಾಡಿ</string>
+
+    <!-- ── Accessibility service ─────────────────────────────────────────── -->
+    <string name="auto_send_service_description">WhatsApp ನಲ್ಲಿ Send ಬಟನ್ ಅನ್ನು ತಾನಾಗಿಯೇ ಒತ್ತಲು MedQueue ಗೆ ಅನುಮತಿಸುತ್ತದೆ, ಇದರಿಂದ ಸಂದೇಶಗಳು ಕೈಯಿಂದ ಒತ್ತದೆ ಕಳುಹಿಸಲ್ಪಡುತ್ತವೆ. ನೀವು MedQueue ನಿಂದ ಸಂದೇಶ ಕಳುಹಿಸಿದಾಗ ಮಾತ್ರ ಇದು ಚಾಲನೆಯಾಗುತ್ತದೆ.</string>
+
+    <!-- ── Reminder notifications ────────────────────────────────────────── -->
+    <string name="channel_pending_name">ಬಾಕಿ ಬೇಡಿಕೆ ಎಚ್ಚರಿಕೆ</string>
+    <string name="channel_pending_desc">ಗ್ರಾಹಕರ ಬೇಡಿಕೆ ಒಂದು ದಿನದಿಂದ ಬಾಕಿ ಇದ್ದಾಗ ನೆನಪಿಸುತ್ತದೆ</string>
+    <string name="channel_summary_name">ದಿನದ ಸಾರಾಂಶ</string>
+    <string name="channel_summary_desc">ದಿನದ ಕೊನೆಯಲ್ಲಿ ಬಾಕಿ ಇರುವ ಬೇಡಿಕೆಗಳ ಎಣಿಕೆ</string>
+    <string name="reminder_pending_title">ಬೇಡಿಕೆಗಳು ಇನ್ನೂ ಕಾಯುತ್ತಿವೆ</string>
+    <string name="reminder_summary_title">ದಿನದ ಕೊನೆ</string>
+
+    <plurals name="reminder_pending_body">
+        <item quantity="one">%1$d ಬೇಡಿಕೆ %2$s ದಿಂದ ಬಾಕಿ ಇದೆ.</item>
+        <item quantity="other">%1$d ಬೇಡಿಕೆಗಳು ಬಾಕಿ ಇವೆ — ಅತ್ಯಂತ ಹಳೆಯದು %2$s ದಿಂದ.</item>
+    </plurals>
+    <plurals name="reminder_summary_body">
+        <item quantity="one">%1$d ಬೇಡಿಕೆ ಇನ್ನೂ ಬಾಕಿ ಇದೆ.</item>
+        <item quantity="other">%1$d ಬೇಡಿಕೆಗಳು ಇನ್ನೂ ಬಾಕಿ ಇವೆ.</item>
+    </plurals>
+</resources>

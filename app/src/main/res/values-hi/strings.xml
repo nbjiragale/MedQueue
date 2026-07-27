@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Hindi (hi) — NEEDS NATIVE REVIEW BEFORE RELEASE.
+
+    Translated without a native speaker. The terminology choices worth checking
+    first, because they repeat everywhere:
+      · "request"   → "ऑर्डर"     (what a shop counter actually says, over the
+                                   more formal "अनुरोध")
+      · "delivered" → "दे दिया"
+      · "pending"   → "बाकी"
+      · "prescription" → "पर्चा"
+
+    Brand and protocol names (MedQueue, WhatsApp, SMS, +91) are deliberately
+    absent so they fall back to values/strings.xml untranslated.
+-->
+<resources>
+    <string name="app_tagline">दवा की माँग, आसान तरीके से</string>
+
+    <!-- ── Bottom navigation ─────────────────────────────────────────────── -->
+    <string name="nav_queue">कतार</string>
+    <string name="nav_new">नया</string>
+    <string name="nav_settings">सेटिंग</string>
+
+    <!-- ── Onboarding ────────────────────────────────────────────────────── -->
+    <string name="onboarding_title">अपनी दुकान सेट करें</string>
+    <string name="onboarding_subtitle">एक मिनट से भी कम — रसीद और ग्राहकों को भेजे जाने वाले संदेश में इस्तेमाल होगा</string>
+    <string name="onboarding_prefs_title">कतार पर नज़र रखें</string>
+    <string name="onboarding_prefs_subtitle">चुनें कि आपको कौन-से रिमाइंडर चाहिए। इन्हें आप कभी भी सेटिंग में बदल सकते हैं।</string>
+    <string name="onboarding_shop_details">दुकान की जानकारी</string>
+    <string name="onboarding_your_name">आपका नाम</string>
+    <string name="onboarding_your_name_hint">मालिक / कर्मचारी का नाम</string>
+    <string name="onboarding_continue">आगे बढ़ें</string>
+    <string name="onboarding_get_started">शुरू करें</string>
+    <string name="onboarding_back">पीछे</string>
+
+    <!-- ── Shared field labels ───────────────────────────────────────────── -->
+    <string name="label_shop_name">दुकान का नाम</string>
+    <string name="label_shop_name_hint">जैसे Ainapur Medical Store</string>
+    <string name="label_address">पता</string>
+    <string name="label_address_hint">दुकान का पता</string>
+    <string name="label_name">नाम</string>
+    <string name="label_phone">फ़ोन</string>
+    <string name="label_phone_hint">10 अंकों का मोबाइल नंबर</string>
+    <string name="label_optional">(वैकल्पिक)</string>
+
+    <!-- ── New / edit request ────────────────────────────────────────────── -->
+    <string name="new_request">नया ऑर्डर</string>
+    <string name="new_request_subtitle">ग्राहक की दवा का ऑर्डर सेव करें</string>
+    <string name="edit_request">ऑर्डर बदलें</string>
+    <string name="edit_request_subtitle">ग्राहक या दवा की जानकारी अपडेट करें</string>
+    <string name="section_customer">ग्राहक</string>
+    <string name="section_medicine">दवा</string>
+    <string name="section_prescription">पर्चा</string>
+    <string name="customer_name_hint">ग्राहक का पूरा नाम</string>
+    <string name="medicines_hint">हर लाइन में एक — जैसे Paracetamol 650mg</string>
+    <string name="prescription_none">कोई पर्चा नहीं लगाया गया</string>
+    <string name="action_camera">कैमरा</string>
+    <string name="action_gallery">गैलरी</string>
+    <string name="action_remove_photo">फ़ोटो हटाएँ</string>
+    <string name="action_close">बंद करें</string>
+    <string name="action_view_photo">पर्चा पूरी स्क्रीन पर देखें</string>
+    <string name="mark_emergency">इमरजेंसी के रूप में चिह्नित करें</string>
+    <string name="save_request">ऑर्डर सेव करें</string>
+    <string name="save_changes">बदलाव सेव करें</string>
+    <string name="saving">सेव हो रहा है…</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="phone_required">फ़ोन नंबर ज़रूरी है</string>
+    <string name="phone_invalid">10 अंकों का सही नंबर डालें</string>
+    <string name="camera_unavailable">कोई कैमरा ऐप उपलब्ध नहीं</string>
+    <string name="photo_failed">वह फ़ोटो नहीं लग सकी</string>
+
+    <!-- ── Queue ─────────────────────────────────────────────────────────── -->
+    <string name="queue_title">कतार</string>
+    <string name="queue_subtitle">%1$d को सूचित करना है · %2$d लेने बाकी · %3$d आज</string>
+    <string name="search_hint">नाम, फ़ोन या दवा खोजें</string>
+    <string name="action_clear_search">खोज हटाएँ</string>
+    <string name="filter_all">सभी</string>
+    <string name="filter_pending">बाकी</string>
+    <string name="filter_urgent">ज़रूरी</string>
+    <string name="filter_delivered">दे दिया</string>
+    <string name="status_pending">बाकी</string>
+    <string name="status_notified">सूचित</string>
+    <string name="status_delivered">दे दिया</string>
+    <string name="action_notify">सूचित करें</string>
+    <string name="action_notify_again">फिर सूचित करें</string>
+    <string name="no_medicines_listed">कोई दवा नहीं लिखी</string>
+    <string name="delivered_undo_message">दे दिया चिह्नित किया</string>
+    <string name="action_undo">वापस लें</string>
+    <string name="queue_notify_failed">संदेश नहीं भेजा जा सका — ऑर्डर खोलकर दूसरा तरीका आज़माएँ</string>
+    <string name="medicine_ready_pill">%1$d/%2$d आई</string>
+    <plurals name="medicine_count">
+        <item quantity="one">%1$d दवा</item>
+        <item quantity="other">%1$d दवाएँ</item>
+    </plurals>
+    <string name="badge_urgent">ज़रूरी</string>
+    <string name="badge_emergency">इमरजेंसी</string>
+    <string name="no_name_provided">नाम नहीं दिया</string>
+    <string name="empty_no_matches">इस फ़िल्टर में और ऑर्डर नहीं</string>
+    <string name="empty_no_requests">अभी कोई ऑर्डर नहीं</string>
+    <string name="empty_no_requests_hint">ग्राहक का ऑर्डर सेव करें, वह यहाँ दिखेगा</string>
+    <string name="add_request">नया ऑर्डर</string>
+    <string name="action_open_search">ऑर्डर खोजें</string>
+    <string name="action_close_search">खोज बंद करें</string>
+
+    <!-- ── Detail ────────────────────────────────────────────────────────── -->
+    <string name="detail_title">ऑर्डर</string>
+    <string name="action_edit">बदलें</string>
+    <string name="action_delete">हटाएँ</string>
+    <string name="action_back">पीछे</string>
+    <string name="action_more">और विकल्प</string>
+    <string name="section_medicines">दवाएँ</string>
+    <string name="medicines_ready_count">%2$d में से %1$d आ गई</string>
+    <string name="requested_at">%1$s को माँगा</string>
+    <string name="notified_at">%1$s को सूचित किया</string>
+
+    <!-- ── Contact outcomes ──────────────────────────────────────────────── -->
+    <string name="error_invalid_phone">फ़ोन नंबर सही नहीं है</string>
+    <string name="error_whatsapp_missing">WhatsApp इंस्टॉल नहीं है</string>
+    <string name="error_no_handler">इसके लिए कोई ऐप नहीं मिला</string>
+    <string name="error_send_failed">भेजा नहीं जा सका</string>
+    <string name="error_sms_permission_denied">SMS की अनुमति नहीं मिली</string>
+    <string name="sms_sent">SMS भेजा गया</string>
+    <string name="sms_sent_parts">SMS भेजा गया (%1$d संदेश)</string>
+    <string name="action_retry">फिर कोशिश करें</string>
+    <string name="action_send_sms_instead">SMS भेजें</string>
+    <string name="action_call">कॉल</string>
+    <string name="mark_delivered">दे दिया चिह्नित करें</string>
+    <string name="delete_confirm_title">ऑर्डर हटाएँ</string>
+    <string name="delete_confirm_body">इससे ऑर्डर और उसका पर्चा दोनों हट जाएँगे। इसे वापस नहीं लाया जा सकता।</string>
+
+    <!-- ── Settings ──────────────────────────────────────────────────────── -->
+    <string name="settings_title">सेटिंग</string>
+    <string name="settings_subtitle">दुकान की जानकारी और संदेश का नमूना</string>
+    <string name="section_shop">दुकान</string>
+    <string name="section_primary_contact">मुख्य संपर्क</string>
+    <string name="section_secondary_contact">दूसरा संपर्क</string>
+    <string name="section_message_preview">संदेश का नमूना</string>
+    <string name="section_reminders">रिमाइंडर</string>
+    <string name="auto_send_whatsapp">WhatsApp पर अपने आप भेजें</string>
+    <string name="auto_send_whatsapp_sub">दे दिया चिह्नित करते ही अपने आप भेजा जाएगा</string>
+    <string name="auto_send_whatsapp_sub_onboarding">दे दिया चिह्नित करते ही ग्राहक को अपने आप सूचित करें</string>
+    <string name="auto_send_sms">SMS अपने आप भेजें</string>
+    <string name="auto_send_sms_sub">SMS ऐप खोले बिना पीछे से SMS भेजें</string>
+    <string name="auto_send_service_active">एक्सेसिबिलिटी सेवा चालू है</string>
+    <string name="auto_send_service_inactive">सेवा चालू नहीं — सेटिंग खोलने के लिए टैप करें</string>
+    <string name="auto_send_sms_permission_granted">SMS की अनुमति मिल गई</string>
+    <string name="auto_send_sms_permission_denied">अनुमति नहीं मिली — देने के लिए टैप करें</string>
+    <string name="reminder_pending_alerts">बाकी ऑर्डर की चेतावनी</string>
+    <string name="reminder_pending_alerts_sub">ऑर्डर 24 घंटे से ज़्यादा पड़ा रहे तो बताएँ</string>
+    <string name="reminder_daily_summary">रोज़ का सारांश</string>
+    <string name="reminder_daily_summary_sub">दिन के अंत में बाकी ऑर्डर की गिनती</string>
+    <string name="save_settings">सेटिंग सेव करें</string>
+    <string name="settings_saved">सेटिंग सेव हो गई</string>
+    <string name="notifications_blocked">रिमाइंडर पाने के लिए नोटिफ़िकेशन चालू करें</string>
+
+    <!-- ── Accessibility service ─────────────────────────────────────────── -->
+    <string name="auto_send_service_description">MedQueue को WhatsApp में Send बटन अपने आप दबाने देता है, ताकि संदेश बिना हाथ लगाए भेजे जा सकें। यह सिर्फ़ तभी चलता है जब आप MedQueue से संदेश भेजते हैं।</string>
+
+    <!-- ── Reminder notifications ────────────────────────────────────────── -->
+    <string name="channel_pending_name">बाकी ऑर्डर की चेतावनी</string>
+    <string name="channel_pending_desc">जब ग्राहक का ऑर्डर एक दिन से पड़ा हो तो याद दिलाता है</string>
+    <string name="channel_summary_name">रोज़ का सारांश</string>
+    <string name="channel_summary_desc">दिन के अंत में बाकी ऑर्डर की गिनती</string>
+    <string name="reminder_pending_title">ऑर्डर अब भी बाकी हैं</string>
+    <string name="reminder_summary_title">दिन का अंत</string>
+
+    <plurals name="reminder_pending_body">
+        <item quantity="one">%1$d ऑर्डर %2$s से बाकी है।</item>
+        <item quantity="other">%1$d ऑर्डर बाकी हैं — सबसे पुराना %2$s से।</item>
+    </plurals>
+    <plurals name="reminder_summary_body">
+        <item quantity="one">%1$d ऑर्डर अब भी बाकी है।</item>
+        <item quantity="other">%1$d ऑर्डर अब भी बाकी हैं।</item>
+    </plurals>
+</resources>

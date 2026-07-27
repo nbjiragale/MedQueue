@@ -202,9 +202,12 @@ operate is entirely English: one `res/values/strings.xml`, no `values-kn` or
 The strings are already fully externalised, so this is translation work
 rather than refactoring.
 
-**Change:** add `values-kn` (and `values-hi`). Verify Manrope's Kannada
-coverage first — it has none, so the theme needs a Noto Sans Kannada fallback
-for that locale.
+**Change:** add `values-kn` (and `values-hi`).
+
+*Correction to the above:* the font is not a blocker. Manrope carries no
+Kannada glyphs, but Android falls back to the platform's Noto Sans Kannada
+per glyph, so no font needs bundling and no per-locale theme switch is
+required — only the metrics differ slightly from the Latin UI.
 
 ## 13. Fixed heights will clip at large font scales
 
@@ -240,7 +243,7 @@ queue and detail screens at 2.0 font scale.
 
 ## Implementation status
 
-Findings 1–11 and part of 13 are implemented on this branch. Two places where
+Findings 1–12 and part of 13 are implemented on this branch. Two places where
 the implementation deliberately departs from the recommendation above:
 
 - **Finding 11 — which add affordance to keep.** The recommendation was to keep
@@ -254,10 +257,17 @@ the implementation deliberately departs from the recommendation above:
   `notifiedAt` column. A stored third value would let a row hold an impossible
   status/timestamp combination, and would need every existing row converted.
 
-Still open: finding 12 (Kannada/Hindi locales) and the remainder of 13 (the
-`Pill` composable still sets `softWrap = false`, which clips rather than wraps
-at large font scales — wrapping it reintroduces the row-stretching bug its
-comment warns about, so it needs a different fix).
+The Kannada and Hindi files (finding 12) were written without a native
+speaker and **need review before release** — each file carries a header
+listing the recurring term choices to check first. `MedQueue`, `WhatsApp`,
+`SMS` and `+91` are deliberately absent from both so they fall back to
+English.
+
+Still open: the remainder of 13. The `Pill` composable sets
+`softWrap = false`, so it clips rather than wraps at large font scales.
+Letting it wrap reintroduces the row-stretching bug its comment warns about,
+so this needs a different fix than the min-height change applied to the
+buttons.
 
 ## What is already right
 
