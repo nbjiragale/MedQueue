@@ -99,6 +99,7 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
                 screen = Screen.RequestList
             },
             onBack = { screen = Screen.RequestList },
+            snackbarHostState = snackbarHostState,
             bottomBar = bottomBar
         )
 
@@ -139,6 +140,7 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
                         screen = Screen.RequestList
                     },
                     onNotified = { vm.markNotified(request.id) },
+                    onToggleItem = { index, ready -> vm.setItemReady(request.id, index, ready) },
                     onDelete = {
                         vm.deleteRequest(request.id)
                         screen = Screen.RequestList
@@ -161,6 +163,7 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
                         screen = Screen.RequestDetail(request.id)
                     },
                     onBack = { screen = Screen.RequestDetail(request.id) },
+                    snackbarHostState = snackbarHostState,
                     bottomBar = bottomBar
                 )
             }
@@ -169,6 +172,7 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
         Screen.Settings -> SettingsScreen(
             settingsPrefs = settingsPrefs,
             onBack = { screen = Screen.RequestList },
+            snackbarHostState = snackbarHostState,
             bottomBar = bottomBar
         )
     }

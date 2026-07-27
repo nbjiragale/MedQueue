@@ -1,5 +1,6 @@
 package com.niranjan.medqueue.ui.screens
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.niranjan.medqueue.R
@@ -13,6 +14,7 @@ fun EditRequestScreen(
     request: RequestEntity,
     onSave: (name: String, phone: String, medicine: String, emergency: Boolean, prescriptionPath: String?) -> Unit,
     onBack: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     bottomBar: @Composable () -> Unit = {}
 ) {
     RequestFormScreen(
@@ -22,6 +24,7 @@ fun EditRequestScreen(
         initial = request,
         onSubmit = onSave,
         onCancel = onBack,
+        snackbarHostState = snackbarHostState,
         bottomBar = bottomBar
     )
 }

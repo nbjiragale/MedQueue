@@ -69,6 +69,24 @@ data class RequestEntity(
      * never have been. Set by WhatsApp/SMS sends, and deliberately *not*
      * cleared when a delivery is undone — the message was still sent.
      */
-    val notifiedAt: Long? = null
+    val notifiedAt: Long? = null,
+    /**
+     * Indices into [medicineName]'s lines that have arrived, comma-separated
+     * (`"0,2"`). Empty means nothing has come in yet.
+     *
+     * Fulfilment used to be all-or-nothing, so "two of the three are in" had
+     * nowhere to live. Stored as indices rather than names because the same
+     * drug can legitimately appear twice on one order; cleared whenever the
+     * medicine list is edited, since the indices no longer refer to anything.
+     */
+    val readyItems: String = ""
 )
+
+/** The medicine lines that have been marked as arrived. */
+fun RequestEntity.readyIndices(): Set<Int> =
+    if (readyItems.isBlank()) emptySet()
+    else readyItems.split(',').mapNotNull { it.trim().toIntOrNull() }.toSet()
+
+/** Inverse of [readyIndices] — the storage form. */
+fun Set<Int>.toReadyItems(): String = sorted().joinToString(",")
 

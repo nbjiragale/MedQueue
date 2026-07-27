@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
@@ -29,6 +30,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -36,6 +38,7 @@ import com.niranjan.medqueue.R
 import com.niranjan.medqueue.contact.*
 import com.niranjan.medqueue.data.local.RequestEntity
 import com.niranjan.medqueue.data.local.RequestStatus
+import com.niranjan.medqueue.data.local.readyIndices
 import com.niranjan.medqueue.data.local.stage
 import com.niranjan.medqueue.data.settings.SettingsPrefs
 import com.niranjan.medqueue.prescription.PrescriptionStore
@@ -60,6 +63,7 @@ fun RequestDetailScreen(
     onEdit: () -> Unit,
     onDelivered: () -> Unit,
     onNotified: () -> Unit,
+    onToggleItem: (index: Int, ready: Boolean) -> Unit,
     onDelete: () -> Unit,
     onBack: () -> Unit,
     bottomBar: @Composable () -> Unit = {}
@@ -227,14 +231,22 @@ fun RequestDetailScreen(
 
                 // ── Medicines ───────────────────────────────────────────────
                 if (medicines.isNotEmpty()) {
+                    val ready = remember(request.readyItems) { request.readyIndices() }
+                    val readyCount = medicines.indices.count { it in ready }
+
                     DsCard(spacing = 10.dp) {
-                        Eyebrow(stringResource(R.string.section_medicines))
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Eyebrow(
+                            stringResource(R.string.section_medicines),
+                            trailing = stringResource(
+                                R.string.medicines_ready_count, readyCount, medicines.size
+                            )
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             medicines.forEachIndexed { index, med ->
-                                Text(
-                                    text = "${index + 1}. $med",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = Ink
+                                MedicineRow(
+                                    label = med,
+                                    ready = index in ready,
+                                    onToggle = { onToggleItem(index, index !in ready) }
                                 )
                             }
                         }
@@ -413,6 +425,52 @@ private fun runContact(
 
         ContactActionResult.SmsPermissionNeeded ->
             onNeedsSmsPermission()
+    }
+}
+
+// ── Medicine line ─────────────────────────────────────────────────────────────
+
+/**
+ * One medicine, tickable as it arrives.
+ *
+ * A part-filled order is the normal case when a wholesaler delivers, and the
+ * binary request status had no way to express it.
+ */
+@Composable
+private fun MedicineRow(label: String, ready: Boolean, onToggle: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onToggle)
+            .defaultMinSize(minHeight = 48.dp)
+            .padding(horizontal = 4.dp, vertical = 4.dp)
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(20.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(if (ready) Teal else Color.Transparent)
+                .border(1.5.dp, if (ready) Teal else Line, RoundedCornerShape(6.dp))
+        ) {
+            if (ready) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(13.dp)
+                )
+            }
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (ready) Muted else Ink,
+            textDecoration = if (ready) TextDecoration.LineThrough else null
+        )
     }
 }
 

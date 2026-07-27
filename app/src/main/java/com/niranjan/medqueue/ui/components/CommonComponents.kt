@@ -39,24 +39,39 @@ private val ButtonShape = RoundedCornerShape(14.dp)
 
 // ── Headers ───────────────────────────────────────────────────────────────────
 
-/** White header strip with a big title and a muted subtitle. */
+/**
+ * White header strip with a big title and a muted subtitle.
+ *
+ * [trailing] holds controls that belong to the screen rather than to a row —
+ * the queue's search toggle, for instance.
+ */
 @Composable
 fun ScreenHeader(
     title: String,
     subtitle: String? = null,
-    topPadding: Dp = 20.dp
+    topPadding: Dp = 20.dp,
+    trailing: @Composable (() -> Unit)? = null
 ) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
-            .padding(start = 20.dp, end = 20.dp, top = topPadding, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
+            .padding(start = 20.dp, end = if (trailing != null) 8.dp else 20.dp, top = topPadding, bottom = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge, color = Ink)
-        if (subtitle != null) {
-            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Muted)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(title, style = MaterialTheme.typography.titleLarge, color = Ink)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Muted)
+            }
+        }
+        if (trailing != null) {
+            Spacer(Modifier.width(8.dp))
+            trailing()
         }
     }
 }

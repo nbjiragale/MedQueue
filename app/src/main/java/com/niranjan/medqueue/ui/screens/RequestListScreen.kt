@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -34,6 +33,7 @@ import com.niranjan.medqueue.contact.formatForDisplay
 import com.niranjan.medqueue.data.local.RequestEntity
 import com.niranjan.medqueue.data.local.RequestStage
 import com.niranjan.medqueue.data.local.RequestStatus
+import com.niranjan.medqueue.data.local.readyIndices
 import com.niranjan.medqueue.data.local.stage
 import com.niranjan.medqueue.navigation.FilterTag
 import com.niranjan.medqueue.ui.components.*
@@ -56,6 +56,11 @@ fun RequestListScreen(
     bottomBar: @Composable () -> Unit = {}
 ) {
     var query by rememberSaveable { mutableStateOf("") }
+
+    // Collapsed by default. An always-on search field cost ~56dp of a header
+    // that already ran to about a third of the screen before the first row, and
+    // it earns that space only once the queue is long.
+    var searchOpen by rememberSaveable { mutableStateOf(false) }
 
     // Opens on Pending, not All. "All" led with yesterday's finished work and
     // pushed the live queue below the fold.
@@ -103,19 +108,11 @@ fun RequestListScreen(
         containerColor = Paper,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         // Headers and the bottom bar consume the system-bar insets themselves.
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                shape = RoundedCornerShape(17.dp),
-                containerColor = Teal,
-                contentColor = Color.White,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 10.dp),
-                modifier = Modifier.size(54.dp)
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_request))
-            }
-        }
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        // No FAB: the bottom bar's "New" tab already does this, and it is
+        // visible on every screen rather than just this one. Dropping the FAB
+        // also gives the list back the ~72dp of bottom padding that was
+        // reserved to keep the two from colliding.
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
 
@@ -125,14 +122,35 @@ fun RequestListScreen(
                     title = stringResource(R.string.queue_title),
                     subtitle = stringResource(
                         R.string.queue_subtitle, toNotifyCount, awaitingCount, todayCount
-                    )
+                    ),
+                    trailing = {
+                        IconButton(
+                            onClick = {
+                                searchOpen = !searchOpen
+                                if (!searchOpen) query = ""
+                            },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                if (searchOpen) Icons.Filled.Close else Icons.Filled.Search,
+                                contentDescription = stringResource(
+                                    if (searchOpen) R.string.action_close_search
+                                    else R.string.action_open_search
+                                ),
+                                tint = if (searchOpen) Teal else Muted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 )
 
-                SearchField(
-                    value = query,
-                    onValueChange = { query = it },
-                    modifier = Modifier.padding(horizontal = 20.dp)
-                )
+                if (searchOpen) {
+                    SearchField(
+                        value = query,
+                        onValueChange = { query = it },
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                    )
+                }
 
                 Row(
                     modifier = Modifier
@@ -156,11 +174,21 @@ fun RequestListScreen(
             if (visible.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     if (requests.isEmpty()) {
-                        EmptyNote(
-                            text = stringResource(R.string.empty_no_requests),
-                            hint = stringResource(R.string.empty_no_requests_hint),
-                            modifier = Modifier.padding(top = 48.dp)
-                        )
+                        // The empty state carries its own call to action now that
+                        // there is no FAB pointing at it.
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(top = 48.dp, start = 40.dp, end = 40.dp)
+                        ) {
+                            EmptyNote(
+                                text = stringResource(R.string.empty_no_requests),
+                                hint = stringResource(R.string.empty_no_requests_hint)
+                            )
+                            PrimaryButton(
+                                text = stringResource(R.string.add_request),
+                                onClick = onAddClick
+                            )
+                        }
                     } else {
                         EmptyNote(
                             text = stringResource(R.string.empty_no_matches),
@@ -170,7 +198,7 @@ fun RequestListScreen(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 96.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(visible, key = { it.id }) { request ->
@@ -305,6 +333,10 @@ private fun RequestRow(
 
     val stage = request.stage
     val showActions = request.status == RequestStatus.PENDING
+    val readyCount = remember(request.readyItems, medicines) {
+        val ready = request.readyIndices()
+        medicines.indices.count { it in ready }
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -356,10 +388,21 @@ private fun RequestRow(
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 if (medicines.size > 1) {
+                                    // Once anything has arrived the pill reports
+                                    // progress rather than just size — that is
+                                    // the number the worker is tracking.
                                     CountPill(
-                                        pluralStringResource(
-                                            R.plurals.medicine_count, medicines.size, medicines.size
-                                        )
+                                        if (readyCount > 0) {
+                                            stringResource(
+                                                R.string.medicine_ready_pill,
+                                                readyCount, medicines.size
+                                            )
+                                        } else {
+                                            pluralStringResource(
+                                                R.plurals.medicine_count,
+                                                medicines.size, medicines.size
+                                            )
+                                        }
                                     )
                                 }
                                 if (request.isEmergency) {

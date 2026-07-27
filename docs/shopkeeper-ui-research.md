@@ -238,6 +238,27 @@ queue and detail screens at 2.0 font scale.
 11. Large-font-scale pass (13)
 12. Per-item checkboxes for partial fulfilment (5)
 
+## Implementation status
+
+Findings 1–11 and part of 13 are implemented on this branch. Two places where
+the implementation deliberately departs from the recommendation above:
+
+- **Finding 11 — which add affordance to keep.** The recommendation was to keep
+  the FAB. The FAB was dropped instead and the bottom bar's New tab kept: the
+  tab is visible on every screen rather than just the queue, and removing the
+  FAB gives the list back the ~72dp of bottom padding reserved to stop the two
+  colliding — which serves finding 10 at the same time. The empty state gained
+  its own button so first-run still has an obvious way in.
+- **Finding 1 — how to model the middle state.** Rather than adding a third
+  `RequestStatus` value, the stage is *derived* from `status` plus a new
+  `notifiedAt` column. A stored third value would let a row hold an impossible
+  status/timestamp combination, and would need every existing row converted.
+
+Still open: finding 12 (Kannada/Hindi locales) and the remainder of 13 (the
+`Pill` composable still sets `softWrap = false`, which clips rather than wraps
+at large font scales — wrapping it reintroduces the row-stretching bug its
+comment warns about, so it needs a different fix).
+
 ## What is already right
 
 Worth not breaking: the phone tile as identity when names are optional; the

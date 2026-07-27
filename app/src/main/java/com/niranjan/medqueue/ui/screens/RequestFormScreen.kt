@@ -1,7 +1,6 @@
 package com.niranjan.medqueue.ui.screens
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import com.niranjan.medqueue.R
 import com.niranjan.medqueue.data.local.RequestEntity
 import com.niranjan.medqueue.prescription.PrescriptionStore
@@ -48,9 +48,15 @@ fun RequestFormScreen(
     initial: RequestEntity?,
     onSubmit: (name: String, phone: String, medicine: String, emergency: Boolean, prescriptionPath: String?) -> Unit,
     onCancel: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     bottomBar: @Composable () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    fun report(text: String) {
+        scope.launch { snackbarHostState.showSnackbar(text) }
+    }
 
     var phone     by rememberSaveable { mutableStateOf(initial?.phoneNumber.orEmpty()) }
     var name      by rememberSaveable { mutableStateOf(initial?.customerName.orEmpty()) }
@@ -83,7 +89,7 @@ fun RequestFormScreen(
         }
         val stored = PrescriptionStore.promoteCapture(context, staged)
         if (stored == null) {
-            Toast.makeText(context, photoFailed, Toast.LENGTH_SHORT).show()
+            report(photoFailed)
         } else {
             discardIfOrphan(photoPath)
             photoPath = stored
@@ -96,7 +102,7 @@ fun RequestFormScreen(
         if (uri == null) return@rememberLauncherForActivityResult
         val stored = PrescriptionStore.importFromUri(context, uri)
         if (stored == null) {
-            Toast.makeText(context, photoFailed, Toast.LENGTH_SHORT).show()
+            report(photoFailed)
         } else {
             discardIfOrphan(photoPath)
             photoPath = stored
@@ -110,6 +116,7 @@ fun RequestFormScreen(
     Scaffold(
         bottomBar = bottomBar,
         containerColor = Paper,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -184,7 +191,7 @@ fun RequestFormScreen(
                                     cameraLauncher.launch(uri)
                                 }.onFailure {
                                     stagedCapture = null
-                                    Toast.makeText(context, cameraUnavailable, Toast.LENGTH_SHORT).show()
+                                    report(cameraUnavailable)
                                 }
                             }
                         )
