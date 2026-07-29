@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.niranjan.medqueue.data.local.AppDatabase
 import com.niranjan.medqueue.data.local.RequestEntity
 import com.niranjan.medqueue.data.local.RequestStatus
+import com.niranjan.medqueue.data.local.readyIndices
+import com.niranjan.medqueue.data.local.toReadyItems
 import com.niranjan.medqueue.prescription.PrescriptionStore
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
