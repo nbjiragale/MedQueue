@@ -184,4 +184,25 @@
         <item quantity="one">%1$d request is still pending.</item>
         <item quantity="other">%1$d requests are still pending.</item>
     </plurals>
+
+    <!-- ── Message template editor ───────────────────────────────────────── -->
+    <string name="template_title">Message template</string>
+    <string name="template_section_text">Message text</string>
+    <string name="template_section_tokens">Placeholders</string>
+    <string name="template_tokens_help">Tap to insert. Each one is replaced with real details when the message is sent. A line whose placeholder is empty is dropped.</string>
+    <string name="template_save">Save template</string>
+    <string name="template_saved">Message template saved</string>
+    <string name="template_reset_action">Reset</string>
+    <string name="template_reset">Reset to the default wording</string>
+    <string name="template_sms_parts">%1$d SMS parts</string>
+    <string name="template_sms_cost_hint">This SMS is billed as %1$d messages. Removing emoji and the second language brings it down.</string>
+    <string name="template_empty_preview">Nothing to preview yet</string>
+    <string name="template_sample_customer">Ramesh</string>
+    <string name="template_sample_medicine">Paracetamol 650mg</string>
+    <string name="token_shop">Shop name</string>
+    <string name="token_address">Address</string>
+    <string name="token_contact">Contact</string>
+    <string name="token_contact2">2nd contact</string>
+    <string name="token_customer">Customer</string>
+    <string name="token_medicines">Medicines</string>
 </resources>

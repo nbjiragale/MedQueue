@@ -189,4 +189,25 @@
         <item quantity="one">%1$d ಬೇಡಿಕೆ ಇನ್ನೂ ಬಾಕಿ ಇದೆ.</item>
         <item quantity="other">%1$d ಬೇಡಿಕೆಗಳು ಇನ್ನೂ ಬಾಕಿ ಇವೆ.</item>
     </plurals>
+
+    <!-- ── Message template editor ───────────────────────────────────────── -->
+    <string name="template_title">ಸಂದೇಶದ ಮಾದರಿ</string>
+    <string name="template_section_text">ಸಂದೇಶದ ಪಠ್ಯ</string>
+    <string name="template_section_tokens">ಪ್ಲೇಸ್‌ಹೋಲ್ಡರ್‌ಗಳು</string>
+    <string name="template_tokens_help">ಸೇರಿಸಲು ಟ್ಯಾಪ್ ಮಾಡಿ. ಸಂದೇಶ ಕಳುಹಿಸುವಾಗ ಪ್ರತಿಯೊಂದರ ಬದಲಿಗೆ ನಿಜವಾದ ವಿವರ ಬರುತ್ತದೆ. ಪ್ಲೇಸ್‌ಹೋಲ್ಡರ್ ಖಾಲಿ ಇರುವ ಸಾಲನ್ನು ತೆಗೆದುಹಾಕಲಾಗುತ್ತದೆ.</string>
+    <string name="template_save">ಮಾದರಿ ಉಳಿಸಿ</string>
+    <string name="template_saved">ಸಂದೇಶದ ಮಾದರಿ ಉಳಿಸಲಾಗಿದೆ</string>
+    <string name="template_reset_action">ಮರುಹೊಂದಿಸಿ</string>
+    <string name="template_reset">ಮೂಲ ಪದಗಳಿಗೆ ಮರಳಿದೆ</string>
+    <string name="template_sms_parts">%1$d SMS ಭಾಗಗಳು</string>
+    <string name="template_sms_cost_hint">ಈ SMS ಗೆ %1$d ಸಂದೇಶಗಳ ಶುಲ್ಕ ಬೀಳುತ್ತದೆ. ಎಮೋಜಿ ಮತ್ತು ಎರಡನೇ ಭಾಷೆ ತೆಗೆದರೆ ಇದು ಕಡಿಮೆಯಾಗುತ್ತದೆ.</string>
+    <string name="template_empty_preview">ತೋರಿಸಲು ಇನ್ನೂ ಏನೂ ಇಲ್ಲ</string>
+    <string name="template_sample_customer">ರಮೇಶ್</string>
+    <string name="template_sample_medicine">Paracetamol 650mg</string>
+    <string name="token_shop">ಅಂಗಡಿಯ ಹೆಸರು</string>
+    <string name="token_address">ವಿಳಾಸ</string>
+    <string name="token_contact">ಸಂಪರ್ಕ</string>
+    <string name="token_contact2">ಎರಡನೇ ಸಂಪರ್ಕ</string>
+    <string name="token_customer">ಗ್ರಾಹಕ</string>
+    <string name="token_medicines">ಔಷಧಿಗಳು</string>
 </resources>

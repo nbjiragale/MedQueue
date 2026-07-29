@@ -15,6 +15,7 @@ sealed class Screen {
     object Home        : Screen()
     object RequestList : Screen()
     object Settings    : Screen()
+    object MessageTemplate : Screen()
     data class RequestDetail(val requestId: Int) : Screen()
     data class EditRequest(val requestId: Int)   : Screen()
 }
@@ -33,6 +34,7 @@ val ScreenSaver = listSaver<Screen, Any>(
             Screen.Home             -> listOf(KEY_HOME)
             Screen.RequestList      -> listOf(KEY_LIST)
             Screen.Settings         -> listOf(KEY_SETTINGS)
+            Screen.MessageTemplate  -> listOf(KEY_TEMPLATE)
             is Screen.RequestDetail -> listOf(KEY_DETAIL, screen.requestId)
             is Screen.EditRequest   -> listOf(KEY_EDIT, screen.requestId)
         }
@@ -44,6 +46,7 @@ val ScreenSaver = listSaver<Screen, Any>(
             KEY_ONBOARDING -> Screen.Onboarding
             KEY_HOME       -> Screen.Home
             KEY_SETTINGS   -> Screen.Settings
+            KEY_TEMPLATE   -> Screen.MessageTemplate
             KEY_DETAIL     -> Screen.RequestDetail(saved[1] as Int)
             KEY_EDIT       -> Screen.EditRequest(saved[1] as Int)
             else           -> Screen.RequestList
@@ -56,6 +59,7 @@ private const val KEY_ONBOARDING = "onboarding"
 private const val KEY_HOME       = "home"
 private const val KEY_LIST       = "list"
 private const val KEY_SETTINGS   = "settings"
+private const val KEY_TEMPLATE   = "template"
 private const val KEY_DETAIL     = "detail"
 private const val KEY_EDIT       = "edit"
 

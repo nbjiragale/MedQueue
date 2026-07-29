@@ -2,6 +2,9 @@ package com.niranjan.medqueue.data.settings
 
 import android.content.Context
 import androidx.core.content.edit
+import com.niranjan.medqueue.contact.DEFAULT_SMS_TEMPLATE
+import com.niranjan.medqueue.contact.DEFAULT_WHATSAPP_TEMPLATE
+import com.niranjan.medqueue.contact.MessageTemplates
 
 // ── Data holder ──────────────────────────────────────────────────────────────
 
@@ -33,6 +36,39 @@ class SettingsPrefs(context: Context) {
         private const val KEY_PENDING_ALERTS  = "remindPendingAlerts"
         private const val KEY_DAILY_SUMMARY   = "remindDailySummary"
         private const val KEY_LANGUAGE        = "appLanguage"
+        private const val KEY_TEMPLATE_WA     = "templateWhatsApp"
+        private const val KEY_TEMPLATE_SMS    = "templateSms"
+    }
+
+    // ── Message templates ────────────────────────────────────────────────────
+
+    /**
+     * The shopkeeper's message wording, or the stock wording until they edit it.
+     *
+     * A blank stored value reads as "not customised" rather than "send an empty
+     * message" — clearing the box in the editor should restore the default, not
+     * leave customers receiving nothing.
+     */
+    fun templates(): MessageTemplates = MessageTemplates(
+        whatsApp = prefs.getString(KEY_TEMPLATE_WA, null)
+            ?.takeIf { it.isNotBlank() } ?: DEFAULT_WHATSAPP_TEMPLATE,
+        sms = prefs.getString(KEY_TEMPLATE_SMS, null)
+            ?.takeIf { it.isNotBlank() } ?: DEFAULT_SMS_TEMPLATE
+    )
+
+    fun saveTemplates(templates: MessageTemplates) {
+        prefs.edit {
+            putString(KEY_TEMPLATE_WA,  templates.whatsApp)
+            putString(KEY_TEMPLATE_SMS, templates.sms)
+        }
+    }
+
+    /** Drops any customisation, so [templates] falls back to the stock wording. */
+    fun resetTemplates() {
+        prefs.edit {
+            remove(KEY_TEMPLATE_WA)
+            remove(KEY_TEMPLATE_SMS)
+        }
     }
 
     // ── UI language ──────────────────────────────────────────────────────────

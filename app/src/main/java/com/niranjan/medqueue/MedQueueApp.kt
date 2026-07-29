@@ -16,6 +16,7 @@ import com.niranjan.medqueue.contact.ContactActionResult
 import com.niranjan.medqueue.contact.buildMessage
 import com.niranjan.medqueue.contact.launchContactAction
 import com.niranjan.medqueue.data.local.RequestEntity
+import com.niranjan.medqueue.data.local.medicineLines
 import com.niranjan.medqueue.data.settings.SettingsPrefs
 import com.niranjan.medqueue.navigation.Screen
 import com.niranjan.medqueue.navigation.ScreenSaver
@@ -72,8 +73,9 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
                 screen !is Screen.Onboarding
     ) {
         screen = when (val s = screen) {
-            is Screen.EditRequest -> Screen.RequestDetail(s.requestId)
-            else                  -> Screen.RequestList
+            is Screen.EditRequest   -> Screen.RequestDetail(s.requestId)
+            Screen.MessageTemplate  -> Screen.Settings
+            else                    -> Screen.RequestList
         }
     }
 
@@ -109,7 +111,13 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
             onAddClick = { screen = Screen.Home },
             onItemClick = { screen = Screen.RequestDetail(it.id) },
             onNotify = { request ->
-                val message = buildMessage(settingsPrefs.read(), ContactAction.WHATSAPP)
+                val message = buildMessage(
+                    settings = settingsPrefs.read(),
+                    action = ContactAction.WHATSAPP,
+                    templates = settingsPrefs.templates(),
+                    customerName = request.customerName,
+                    medicines = request.medicineLines()
+                )
                 val result = launchContactAction(
                     context, ContactAction.WHATSAPP, request.phoneNumber, message
                 )
@@ -172,6 +180,14 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
         Screen.Settings -> SettingsScreen(
             settingsPrefs = settingsPrefs,
             onBack = { screen = Screen.RequestList },
+            onEditTemplate = { screen = Screen.MessageTemplate },
+            snackbarHostState = snackbarHostState,
+            bottomBar = bottomBar
+        )
+
+        Screen.MessageTemplate -> MessageTemplateScreen(
+            settingsPrefs = settingsPrefs,
+            onBack = { screen = Screen.Settings },
             snackbarHostState = snackbarHostState,
             bottomBar = bottomBar
         )
@@ -197,7 +213,13 @@ private fun notifyOnDelivered(
 ): Boolean {
     if (!AutoSendPrefs.isAutoSendEnabled(context)) return false
 
-    val message = buildMessage(settingsPrefs.read(), ContactAction.WHATSAPP)
+    val message = buildMessage(
+        settings = settingsPrefs.read(),
+        action = ContactAction.WHATSAPP,
+        templates = settingsPrefs.templates(),
+        customerName = request.customerName,
+        medicines = request.medicineLines()
+    )
     val result = launchContactAction(context, ContactAction.WHATSAPP, request.phoneNumber, message)
 
     return result == ContactActionResult.Success || result is ContactActionResult.AutoSent

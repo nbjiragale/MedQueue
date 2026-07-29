@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -25,6 +26,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.niranjan.medqueue.R
 import com.niranjan.medqueue.autosend.AutoSendPrefs
+import com.niranjan.medqueue.contact.ContactAction
 import com.niranjan.medqueue.contact.buildMessage
 import com.niranjan.medqueue.data.settings.AppLanguage
 import com.niranjan.medqueue.data.settings.AppSettings
@@ -43,6 +45,7 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     settingsPrefs: SettingsPrefs,
     onBack: () -> Unit,
+    onEditTemplate: () -> Unit,
     snackbarHostState: SnackbarHostState,
     bottomBar: @Composable () -> Unit = {}
 ) {
@@ -56,9 +59,18 @@ fun SettingsScreen(
     var contact2Name  by rememberSaveable { mutableStateOf(saved.contact2Name) }
     var contact2Phone by rememberSaveable { mutableStateOf(saved.contact2Phone) }
 
-    val preview = remember(shopName, shopAddress, contact1Name, contact1Phone, contact2Name, contact2Phone) {
+    // Reflects the saved template, so editing the wording and editing the shop
+    // details both show up here.
+    val templates = settingsPrefs.templates()
+    val preview = remember(
+        shopName, shopAddress, contact1Name, contact1Phone, contact2Name, contact2Phone, templates
+    ) {
         buildMessage(
-            AppSettings(shopName, shopAddress, contact1Name, contact1Phone, contact2Name, contact2Phone)
+            settings = AppSettings(
+                shopName, shopAddress, contact1Name, contact1Phone, contact2Name, contact2Phone
+            ),
+            action = ContactAction.WHATSAPP,
+            templates = templates
         )
     }
 
@@ -147,8 +159,17 @@ fun SettingsScreen(
 
                 // ── Message preview ─────────────────────────────────────────
                 DsCard(spacing = 10.dp) {
-                    Eyebrow(stringResource(R.string.section_message_preview))
-                    Surface(shape = RoundedCornerShape(14.dp), color = Paper) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            Eyebrow(stringResource(R.string.section_message_preview))
+                        }
+                        HeaderAction(stringResource(R.string.action_edit), Teal, onEditTemplate)
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = Paper,
+                        onClick = onEditTemplate
+                    ) {
                         Text(
                             text = preview,
                             style = MaterialTheme.typography.bodyMedium,
