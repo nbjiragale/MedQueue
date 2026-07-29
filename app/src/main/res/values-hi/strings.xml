@@ -185,4 +185,25 @@
         <item quantity="one">%1$d ऑर्डर अब भी बाकी है।</item>
         <item quantity="other">%1$d ऑर्डर अब भी बाकी हैं।</item>
     </plurals>
+
+    <!-- ── Message template editor ───────────────────────────────────────── -->
+    <string name="template_title">संदेश का नमूना</string>
+    <string name="template_section_text">संदेश का पाठ</string>
+    <string name="template_section_tokens">प्लेसहोल्डर</string>
+    <string name="template_tokens_help">जोड़ने के लिए टैप करें। संदेश भेजते समय हर एक की जगह असली जानकारी आ जाएगी। जिस लाइन का प्लेसहोल्डर खाली हो, वह हटा दी जाती है।</string>
+    <string name="template_save">नमूना सेव करें</string>
+    <string name="template_saved">संदेश का नमूना सेव हो गया</string>
+    <string name="template_reset_action">रीसेट</string>
+    <string name="template_reset">डिफ़ॉल्ट शब्दों पर वापस</string>
+    <string name="template_sms_parts">%1$d SMS भाग</string>
+    <string name="template_sms_cost_hint">इस SMS का शुल्क %1$d संदेशों जितना लगेगा। इमोजी और दूसरी भाषा हटाने से यह कम हो जाएगा।</string>
+    <string name="template_empty_preview">दिखाने के लिए अभी कुछ नहीं</string>
+    <string name="template_sample_customer">रमेश</string>
+    <string name="template_sample_medicine">Paracetamol 650mg</string>
+    <string name="token_shop">दुकान का नाम</string>
+    <string name="token_address">पता</string>
+    <string name="token_contact">संपर्क</string>
+    <string name="token_contact2">दूसरा संपर्क</string>
+    <string name="token_customer">ग्राहक</string>
+    <string name="token_medicines">दवाएँ</string>
 </resources>

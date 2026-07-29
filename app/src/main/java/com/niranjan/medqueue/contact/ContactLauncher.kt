@@ -33,62 +33,41 @@ sealed class ContactActionResult {
 // ── Message builders ──────────────────────────────────────────────────────────
 
 /**
- * Builds the bilingual (English + Kannada) availability message
- * with WhatsApp markdown formatting (*bold*, _italic_).
+ * Builds the availability message for WhatsApp, where markdown (*bold*,
+ * _italic_) renders.
+ *
+ * [template] defaults to the stock wording, so callers that predate editable
+ * templates keep their behaviour unchanged.
  */
-fun buildWhatsAppMessage(settings: AppSettings): String {
-    val contact2Line = if (settings.contact2Phone.isNotBlank())
-        "📞 ${settings.contact2Name}: ${settings.contact2Phone}\n" else ""
+fun buildWhatsAppMessage(
+    settings: AppSettings,
+    template: String = DEFAULT_WHATSAPP_TEMPLATE,
+    customerName: String = "",
+    medicines: List<String> = emptyList()
+): String = renderTemplate(template, settings, customerName, medicines)
 
-    return "*✅ Your Medicines Are Ready!*\n\n" +
-        "Dear Customer, the medicines you requested are now in stock and ready for pickup.\n\n" +
-        "⏰ _Please collect at your earliest convenience._\n\n" +
-        "Thank you for trusting us with your health. 🙏\n" +
-        "*_\"Health is wealth\"_*\n" +
-        "——————————————\n" +
-        "*✅ ನಿಮ್ಮ ಔಷಧಿಗಳು ಸಿದ್ಧವಾಗಿವೆ!*\n\n" +
-        "ಪ್ರಿಯ ಗ್ರಾಹಕರೇ, ನೀವು ಕೇಳಿದ ಔಷಧಿಗಳು ಈಗ ಲಭ್ಯವಿದ್ದು, ತೆಗೆದುಕೊಳ್ಳಲು ಸಿದ್ಧವಾಗಿವೆ.\n\n" +
-        "*_ಆರೋಗ್ಯವೇ ಭಾಗ್ಯ_*\n" +
-        "——————————————\n" +
-        "🏥 *${settings.shopName}*\n" +
-        "📍 _${settings.shopAddress}_\n" +
-        "📞 ${settings.contact1Name}: ${settings.contact1Phone}\n" +
-        contact2Line
-}
+/** The same message for SMS, where markdown markers would just look like noise. */
+fun buildSmsMessage(
+    settings: AppSettings,
+    template: String = DEFAULT_SMS_TEMPLATE,
+    customerName: String = "",
+    medicines: List<String> = emptyList()
+): String = renderTemplate(template, settings, customerName, medicines)
 
 /**
- * Builds the same bilingual message but as plain text (no markdown).
- * Used for SMS where *bold* / _italic_ markers look ugly.
+ * Picks the right template for [action] and renders it.
+ *
+ * [customerName] and [medicines] are only consulted if the shopkeeper actually
+ * put `{customer}` or `{medicines}` in their template; the stock wording does
+ * not, so passing them costs nothing.
  */
-fun buildSmsMessage(settings: AppSettings): String {
-    val contact2Line = if (settings.contact2Phone.isNotBlank())
-        "📞 ${settings.contact2Name}: ${settings.contact2Phone}\n" else ""
-
-    return "✅ Your Medicines Are Ready!\n\n" +
-        "Dear Customer, the medicines you requested are now in stock and ready for pickup.\n\n" +
-        "⏰ Please collect at your earliest convenience.\n\n" +
-        "Thank you for trusting us with your health. 🙏\n" +
-        "\"Health is wealth\"\n" +
-        "——————————————\n" +
-        "✅ ನಿಮ್ಮ ಔಷಧಿಗಳು ಸಿದ್ಧವಾಗಿವೆ!\n\n" +
-        "ಪ್ರಿಯ ಗ್ರಾಹಕರೇ, ನೀವು ಕೇಳಿದ ಔಷಧಿಗಳು ಈಗ ಲಭ್ಯವಿದ್ದು, ತೆಗೆದುಕೊಳ್ಳಲು ಸಿದ್ಧವಾಗಿವೆ.\n\n" +
-        "ಆರೋಗ್ಯವೇ ಭಾಗ್ಯ\n" +
-        "——————————————\n" +
-        "🏥 ${settings.shopName}\n" +
-        "📍 ${settings.shopAddress}\n" +
-        "📞 ${settings.contact1Name}: ${settings.contact1Phone}\n" +
-        contact2Line
-}
-
-/**
- * Picks the right message variant based on the contact action.
- */
-fun buildMessage(settings: AppSettings, action: ContactAction = ContactAction.WHATSAPP): String =
-    when (action) {
-        ContactAction.WHATSAPP -> buildWhatsAppMessage(settings)
-        ContactAction.SMS      -> buildSmsMessage(settings)
-        ContactAction.CALL     -> buildWhatsAppMessage(settings) // not used for calls, fallback
-    }
+fun buildMessage(
+    settings: AppSettings,
+    action: ContactAction = ContactAction.WHATSAPP,
+    templates: MessageTemplates = MessageTemplates.DEFAULT,
+    customerName: String = "",
+    medicines: List<String> = emptyList()
+): String = renderTemplate(templates.forAction(action), settings, customerName, medicines)
 
 // ── Action dispatcher ─────────────────────────────────────────────────────────
 

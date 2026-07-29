@@ -82,6 +82,16 @@ data class RequestEntity(
     val readyItems: String = ""
 )
 
+/**
+ * [medicineName] split into its individual entries.
+ *
+ * The field is one newline-delimited blob, and the same split was being redone
+ * inline wherever it was needed. Indices here are the indices [readyItems]
+ * refers to, so the two must stay derived from the same rule.
+ */
+fun RequestEntity.medicineLines(): List<String> =
+    medicineName.lines().filter { it.isNotBlank() }
+
 /** The medicine lines that have been marked as arrived. */
 fun RequestEntity.readyIndices(): Set<Int> =
     if (readyItems.isBlank()) emptySet()
