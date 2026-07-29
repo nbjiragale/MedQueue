@@ -146,8 +146,8 @@
     <string name="section_message_preview">ಸಂದೇಶದ ಮಾದರಿ</string>
     <string name="section_reminders">ಜ್ಞಾಪನೆಗಳು</string>
     <string name="auto_send_whatsapp">WhatsApp ನಲ್ಲಿ ಸ್ವಯಂ ಕಳುಹಿಸಿ</string>
-    <string name="auto_send_whatsapp_sub">ಕೊಟ್ಟಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ತಾನಾಗಿಯೇ ಕಳುಹಿಸುತ್ತದೆ</string>
-    <string name="auto_send_whatsapp_sub_onboarding">ಕೊಟ್ಟಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ಗ್ರಾಹಕರಿಗೆ ತಾನಾಗಿಯೇ ತಿಳಿಸಿ</string>
+    <string name="auto_send_whatsapp_sub">ತಿಳಿಸಿ ಒತ್ತಿದಾಗ WhatsApp ತೆರೆಯದೆ ಕಳುಹಿಸುತ್ತದೆ</string>
+    <string name="auto_send_whatsapp_sub_onboarding">ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸುವಾಗ WhatsApp ತೆರೆಯದೆ ಕಳುಹಿಸಿ</string>
     <string name="auto_send_sms">SMS ಸ್ವಯಂ ಕಳುಹಿಸಿ</string>
     <string name="auto_send_sms_sub">SMS ಆ್ಯಪ್ ತೆರೆಯದೆ ಹಿನ್ನೆಲೆಯಲ್ಲಿ SMS ಕಳುಹಿಸಿ</string>
     <string name="auto_send_service_active">ಪ್ರವೇಶಸಾಧ್ಯತೆ ಸೇವೆ ಚಾಲನೆಯಲ್ಲಿದೆ</string>

@@ -144,8 +144,8 @@
     <string name="section_message_preview">संदेश का नमूना</string>
     <string name="section_reminders">रिमाइंडर</string>
     <string name="auto_send_whatsapp">WhatsApp पर अपने आप भेजें</string>
-    <string name="auto_send_whatsapp_sub">दे दिया चिह्नित करते ही अपने आप भेजा जाएगा</string>
-    <string name="auto_send_whatsapp_sub_onboarding">दे दिया चिह्नित करते ही ग्राहक को अपने आप सूचित करें</string>
+    <string name="auto_send_whatsapp_sub">सूचित करें दबाने पर WhatsApp खोले बिना भेजें</string>
+    <string name="auto_send_whatsapp_sub_onboarding">ग्राहक को सूचित करते समय WhatsApp खोले बिना भेजें</string>
     <string name="auto_send_sms">SMS अपने आप भेजें</string>
     <string name="auto_send_sms_sub">SMS ऐप खोले बिना पीछे से SMS भेजें</string>
     <string name="auto_send_service_active">एक्सेसिबिलिटी सेवा चालू है</string>
