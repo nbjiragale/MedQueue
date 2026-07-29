@@ -141,8 +141,8 @@
     <string name="section_message_preview">Message preview</string>
     <string name="section_reminders">Reminders</string>
     <string name="auto_send_whatsapp">Auto-send on WhatsApp</string>
-    <string name="auto_send_whatsapp_sub">Sends automatically when marked delivered</string>
-    <string name="auto_send_whatsapp_sub_onboarding">Notify customers automatically when marked delivered</string>
+    <string name="auto_send_whatsapp_sub">Sends without opening WhatsApp when you tap Notify</string>
+    <string name="auto_send_whatsapp_sub_onboarding">Send without opening WhatsApp when you notify a customer</string>
     <string name="auto_send_sms">Auto-send SMS</string>
     <string name="auto_send_sms_sub">Send SMS in the background without opening the SMS app</string>
     <string name="auto_send_service_active">Accessibility service is active</string>

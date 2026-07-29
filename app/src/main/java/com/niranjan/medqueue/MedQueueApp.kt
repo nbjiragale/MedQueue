@@ -1,6 +1,5 @@
 package com.niranjan.medqueue
 
-import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -10,7 +9,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.launch
-import com.niranjan.medqueue.autosend.AutoSendPrefs
 import com.niranjan.medqueue.contact.ContactAction
 import com.niranjan.medqueue.contact.ContactActionResult
 import com.niranjan.medqueue.contact.buildMessage
@@ -42,19 +40,16 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
     val contactFailed = stringResource(R.string.queue_notify_failed)
 
     /**
-     * Marks a request delivered, then offers an undo.
+     * Marks a request delivered, and nothing else.
      *
-     * The undo is skipped when auto-send fired: WhatsApp is in the foreground by
-     * then, so the snackbar would go unseen, and offering to undo something the
-     * customer has already been messaged about would be a lie.
+     * This used to fire the availability message too, which had it backwards:
+     * "delivered" means the customer already walked in and took the medicine,
+     * so messaging them "your medicines are ready, please collect" at that
+     * moment reached someone who had just collected. Telling the customer is
+     * the separate Notify action, which is where the auto-send setting applies.
      */
     fun deliver(request: RequestEntity) {
         vm.markDelivered(request.id)
-        val autoSent = notifyOnDelivered(context, settingsPrefs, request)
-        if (autoSent) {
-            vm.markNotified(request.id)
-            return
-        }
         scope.launch {
             val result = snackbarHostState.showSnackbar(
                 message = deliveredMessage,
@@ -192,35 +187,4 @@ fun MedQueueApp(vm: RequestViewModel, settingsPrefs: SettingsPrefs) {
             bottomBar = bottomBar
         )
     }
-}
-
-/**
- * Auto-notify on "mark delivered", which is what the redesign's Settings copy
- * promises ("Sends automatically when marked delivered").
- *
- * This opens WhatsApp with the message prefilled; the accessibility service
- * taps Send only if the worker has separately enabled it. Failures are
- * deliberately quiet — the delivery status has already been saved, and a
- * messaging hiccup should not read as though that failed too.
- *
- * @return true if WhatsApp was actually launched, which the caller uses to
- *   decide whether an undo snackbar would ever be seen.
- */
-private fun notifyOnDelivered(
-    context: Context,
-    settingsPrefs: SettingsPrefs,
-    request: RequestEntity
-): Boolean {
-    if (!AutoSendPrefs.isAutoSendEnabled(context)) return false
-
-    val message = buildMessage(
-        settings = settingsPrefs.read(),
-        action = ContactAction.WHATSAPP,
-        templates = settingsPrefs.templates(),
-        customerName = request.customerName,
-        medicines = request.medicineLines()
-    )
-    val result = launchContactAction(context, ContactAction.WHATSAPP, request.phoneNumber, message)
-
-    return result == ContactActionResult.Success || result is ContactActionResult.AutoSent
 }
