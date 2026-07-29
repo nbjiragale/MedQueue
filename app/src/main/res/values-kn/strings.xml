@@ -78,14 +78,13 @@
     <string name="action_clear_search">ಹುಡುಕಾಟ ತೆರವುಗೊಳಿಸಿ</string>
     <string name="filter_all">ಎಲ್ಲಾ</string>
     <string name="filter_pending">ಬಾಕಿ</string>
-    <string name="filter_urgent">ತುರ್ತು</string>
     <string name="filter_delivered">ಕೊಟ್ಟಾಗಿದೆ</string>
     <string name="status_pending">ಬಾಕಿ</string>
     <string name="status_notified">ತಿಳಿಸಲಾಗಿದೆ</string>
     <string name="status_delivered">ಕೊಟ್ಟಾಗಿದೆ</string>
     <string name="action_notify">ತಿಳಿಸಿ</string>
     <string name="action_notify_again">ಮತ್ತೆ ತಿಳಿಸಿ</string>
-    <string name="no_medicines_listed">ಯಾವುದೇ ಔಷಧಿ ಬರೆದಿಲ್ಲ</string>
+    <string name="unknown_customer">ಗೊತ್ತಿಲ್ಲ</string>
     <string name="delivered_undo_message">ಕೊಟ್ಟಾಗಿದೆ ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ</string>
     <string name="action_undo">ಹಿಂತಿರುಗಿಸಿ</string>
     <string name="queue_notify_failed">ಸಂದೇಶ ಕಳುಹಿಸಲಾಗಲಿಲ್ಲ — ಬೇಡಿಕೆ ತೆರೆದು ಬೇರೆ ವಿಧಾನ ಪ್ರಯತ್ನಿಸಿ</string>
@@ -94,7 +93,6 @@
         <item quantity="one">%1$d ಔಷಧಿ</item>
         <item quantity="other">%1$d ಔಷಧಿಗಳು</item>
     </plurals>
-    <string name="badge_urgent">ತುರ್ತು</string>
     <string name="badge_emergency">ತುರ್ತು</string>
     <string name="no_name_provided">ಹೆಸರು ನೀಡಿಲ್ಲ</string>
     <string name="empty_no_matches">ಈ ಫಿಲ್ಟರ್‌ಗೆ ಇನ್ನು ಬೇಡಿಕೆಗಳಿಲ್ಲ</string>

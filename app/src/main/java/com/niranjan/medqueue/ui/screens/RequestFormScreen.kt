@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,9 +21,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -68,6 +79,19 @@ fun RequestFormScreen(
     var saving     by rememberSaveable { mutableStateOf(false) }
 
     val originalPhoto = initial?.prescriptionPath
+
+    // New requests start with the customer on the phone — jump straight to
+    // the phone field and pop the keyboard so they don't have to tap in.
+    // Editing an existing request skips this: the worker opened it to look
+    // something up, not necessarily to retype the number.
+    val phoneFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    if (initial == null) {
+        LaunchedEffect(Unit) {
+            phoneFocusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
 
     /** Drops a photo this screen created that is not the one we came in with. */
     fun discardIfOrphan(path: String?) {
@@ -143,7 +167,8 @@ fun RequestFormScreen(
                         required = true,
                         prefix = stringResource(R.string.phone_prefix),
                         error = phoneError,
-                        keyboardType = KeyboardType.Phone
+                        keyboardType = KeyboardType.Phone,
+                        focusRequester = phoneFocusRequester
                     )
                     DsField(
                         label = stringResource(R.string.label_name),
@@ -344,27 +369,76 @@ private fun RowScope.AttachButton(
 }
 
 /**
- * The mockup draws these two affordances as bare geometry rather than icons,
- * so they are reproduced as such — which also avoids pulling in the whole
- * material-icons-extended artifact for two glyphs.
+ * Hand-drawn rather than [Icons.Filled] — a real camera icon only exists in
+ * material-icons-extended, and pulling in that whole artifact (there is no
+ * shrinker on this build; see build.gradle.kts) for one glyph was not worth
+ * the size. Drawn at the app's standard 16dp icon scale instead of the
+ * mockup's 9dp box, which read as an empty placeholder rather than a camera.
  */
 @Composable
 private fun CameraGlyph() {
-    Box(
-        modifier = Modifier
-            .size(11.dp)
-            .border(1.5.dp, Ink, RoundedCornerShape(3.dp))
-    )
+    Canvas(modifier = Modifier.size(16.dp)) {
+        val stroke = Stroke(width = 1.4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val bodyTop = size.height * 0.32f
+
+        // Viewfinder bump
+        drawRoundRect(
+            color = Ink,
+            topLeft = Offset(size.width * 0.32f, 0f),
+            size = Size(size.width * 0.36f, bodyTop * 0.85f),
+            cornerRadius = CornerRadius(1.dp.toPx()),
+            style = stroke
+        )
+        // Body
+        drawRoundRect(
+            color = Ink,
+            topLeft = Offset(0f, bodyTop),
+            size = Size(size.width, size.height - bodyTop),
+            cornerRadius = CornerRadius(size.width * 0.14f),
+            style = stroke
+        )
+        // Lens
+        drawCircle(
+            color = Ink,
+            radius = (size.height - bodyTop) * 0.26f,
+            center = Offset(size.width / 2f, bodyTop + (size.height - bodyTop) / 2f),
+            style = stroke
+        )
+    }
 }
 
+/** Photo-frame glyph — sun and mountains, the universal "image" mark. See [CameraGlyph]. */
 @Composable
 private fun GalleryGlyph() {
-    Box(
-        modifier = Modifier
-            .width(12.dp)
-            .height(9.dp)
-            .border(1.5.dp, Ink, RoundedCornerShape(2.dp))
-    )
+    Canvas(modifier = Modifier.size(16.dp)) {
+        val strokeWidth = 1.4.dp.toPx()
+        val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val inset = strokeWidth / 2f
+
+        drawRoundRect(
+            color = Ink,
+            topLeft = Offset(inset, inset),
+            size = Size(size.width - strokeWidth, size.height - strokeWidth),
+            cornerRadius = CornerRadius(size.width * 0.16f),
+            style = stroke
+        )
+        drawCircle(
+            color = Ink,
+            radius = size.width * 0.09f,
+            center = Offset(size.width * 0.32f, size.height * 0.32f),
+            style = stroke
+        )
+        clipRect(inset, inset, size.width - inset, size.height - inset) {
+            val mountains = Path().apply {
+                moveTo(inset, size.height * 0.8f)
+                lineTo(size.width * 0.38f, size.height * 0.48f)
+                lineTo(size.width * 0.56f, size.height * 0.66f)
+                lineTo(size.width * 0.74f, size.height * 0.4f)
+                lineTo(size.width - inset, size.height * 0.8f)
+            }
+            drawPath(mountains, color = Ink, style = stroke)
+        }
+    }
 }
 
 // ── Emergency check ───────────────────────────────────────────────────────────

@@ -71,14 +71,13 @@
     <string name="action_clear_search">Clear search</string>
     <string name="filter_all">All</string>
     <string name="filter_pending">Pending</string>
-    <string name="filter_urgent">Urgent</string>
     <string name="filter_delivered">Delivered</string>
     <string name="status_pending">Pending</string>
     <string name="status_notified">Notified</string>
     <string name="status_delivered">Delivered</string>
     <string name="action_notify">Notify</string>
     <string name="action_notify_again">Notify again</string>
-    <string name="no_medicines_listed">No medicines listed</string>
+    <string name="unknown_customer">Unknown</string>
     <string name="delivered_undo_message">Marked delivered</string>
     <string name="action_undo">Undo</string>
     <string name="queue_notify_failed">Could not message — open the request to try another way</string>
@@ -87,7 +86,6 @@
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d items</item>
     </plurals>
-    <string name="badge_urgent">Urgent</string>
     <string name="badge_emergency">Emergency</string>
     <string name="no_name_provided">No name provided</string>
     <string name="empty_no_matches">No more requests match this filter</string>

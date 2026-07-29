@@ -16,6 +16,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -204,7 +206,8 @@ fun DsField(
     error: String? = null,
     singleLine: Boolean = true,
     minLines: Int = 1,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    focusRequester: FocusRequester? = null
 ) {
     val hasError = !error.isNullOrBlank()
 
@@ -234,6 +237,9 @@ fun DsField(
                 .fillMaxWidth()
                 .then(
                     if (hasError) Modifier.border(1.5.dp, Red, FieldShape) else Modifier
+                )
+                .then(
+                    if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier
                 ),
             placeholder = placeholder?.let {
                 { Text(it, style = MaterialTheme.typography.bodyLarge, color = Placeholder) }

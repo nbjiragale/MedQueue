@@ -76,14 +76,13 @@
     <string name="action_clear_search">खोज हटाएँ</string>
     <string name="filter_all">सभी</string>
     <string name="filter_pending">बाकी</string>
-    <string name="filter_urgent">ज़रूरी</string>
     <string name="filter_delivered">दे दिया</string>
     <string name="status_pending">बाकी</string>
     <string name="status_notified">सूचित</string>
     <string name="status_delivered">दे दिया</string>
     <string name="action_notify">सूचित करें</string>
     <string name="action_notify_again">फिर सूचित करें</string>
-    <string name="no_medicines_listed">कोई दवा नहीं लिखी</string>
+    <string name="unknown_customer">अज्ञात</string>
     <string name="delivered_undo_message">दे दिया चिह्नित किया</string>
     <string name="action_undo">वापस लें</string>
     <string name="queue_notify_failed">संदेश नहीं भेजा जा सका — ऑर्डर खोलकर दूसरा तरीका आज़माएँ</string>
@@ -92,7 +91,6 @@
         <item quantity="one">%1$d दवा</item>
         <item quantity="other">%1$d दवाएँ</item>
     </plurals>
-    <string name="badge_urgent">ज़रूरी</string>
     <string name="badge_emergency">इमरजेंसी</string>
     <string name="no_name_provided">नाम नहीं दिया</string>
     <string name="empty_no_matches">इस फ़िल्टर में और ऑर्डर नहीं</string>

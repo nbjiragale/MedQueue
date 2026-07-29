@@ -218,7 +218,7 @@ fun RequestListScreen(
 private fun FilterTag.labelRes(): Int = when (this) {
     FilterTag.ALL       -> R.string.filter_all
     FilterTag.PENDING   -> R.string.filter_pending
-    FilterTag.URGENT    -> R.string.filter_urgent
+    FilterTag.URGENT    -> R.string.badge_emergency
     FilterTag.DELIVERED -> R.string.filter_delivered
 }
 
@@ -309,16 +309,20 @@ private fun RequestRow(
     }
     val noName = request.customerName.isBlank()
     val noNameLabel = stringResource(R.string.no_name_provided)
-    val noMedicineLabel = stringResource(R.string.no_medicines_listed)
+    val unknownCustomerLabel = stringResource(R.string.unknown_customer)
 
     // Lead with the medicine. The phone number used to be the headline, but
     // nobody scans a queue by phone number — when stock lands the worker is
     // looking for a drug name, and when a customer walks in they give a name.
-    val headline = remember(medicines, request.customerName, noMedicineLabel) {
+    // The queue never surfaces "no medicines listed" — that's not what a
+    // worker scanning the queue cares about — so an empty medicine list
+    // just falls through to the customer's name, or "Unknown" if that's
+    // missing too.
+    val headline = remember(medicines, request.customerName, unknownCustomerLabel) {
         when {
             medicines.isNotEmpty()       -> medicines.joinToString(", ")
             request.customerName.isNotBlank() -> request.customerName
-            else                         -> noMedicineLabel
+            else                         -> unknownCustomerLabel
         }
     }
     val headlineIsPlaceholder = medicines.isEmpty() && noName
@@ -406,7 +410,7 @@ private fun RequestRow(
                                     )
                                 }
                                 if (request.isEmergency) {
-                                    UrgentPill(stringResource(R.string.badge_urgent))
+                                    UrgentPill(stringResource(R.string.badge_emergency))
                                 }
                             }
                         }
